@@ -2,14 +2,13 @@
 
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@db/index";
 import { services } from "@db/schema";
 import { requireUser } from "@/lib/auth";
 import { parseBRL } from "@/lib/money";
 
-export type ServiceFormState = { error?: string };
+export type ServiceFormState = { error?: string; ok?: boolean };
 
 const schema = z.object({
   name: z.string().trim().min(2, "Informe o nome do serviço."),
@@ -41,7 +40,7 @@ export async function createService(_p: ServiceFormState, formData: FormData): P
   if ("error" in r) return { error: r.error };
   await db.insert(services).values(r.value);
   revalidatePath("/servicos");
-  redirect("/servicos");
+  return { ok: true };
 }
 
 export async function updateService(id: number, _p: ServiceFormState, formData: FormData): Promise<ServiceFormState> {
@@ -50,12 +49,11 @@ export async function updateService(id: number, _p: ServiceFormState, formData: 
   if ("error" in r) return { error: r.error };
   await db.update(services).set(r.value).where(eq(services.id, id));
   revalidatePath("/servicos");
-  redirect("/servicos");
+  return { ok: true };
 }
 
 export async function setServiceActive(id: number, active: boolean) {
   await requireUser("services.manage");
   await db.update(services).set({ active }).where(eq(services.id, id));
   revalidatePath("/servicos");
-  redirect("/servicos");
 }

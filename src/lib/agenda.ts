@@ -14,6 +14,7 @@ import {
   scheduleBlocks,
   services,
 } from "@db/schema";
+import { isOverlapViolation } from "./db-errors";
 import { freeStarts, intersect, pickLeastBusy, resolveDayWindow, type Interval } from "./availability";
 import { formatTime, localDateTime, parseTime, weekdayOf } from "./time";
 
@@ -172,10 +173,7 @@ export type BookInput = {
 
 export type BookResult = { ok: true; id: number } | { ok: false; error: string };
 
-export function isOverlapViolation(e: unknown) {
-  const code = (e as { code?: string; cause?: { code?: string } } | null);
-  return code?.code === "23P01" || code?.cause?.code === "23P01";
-}
+export { isOverlapViolation };
 
 /** Cria o atendimento. A trava do banco (EXCLUDE) garante que ninguém reserva o mesmo horário ao mesmo tempo. */
 export async function bookAppointment(input: BookInput): Promise<BookResult> {

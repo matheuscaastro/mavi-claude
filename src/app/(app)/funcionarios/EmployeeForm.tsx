@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import type { EmployeeFormState } from "./actions";
 
 export type EmployeeDefaults = {
@@ -22,14 +22,19 @@ export default function EmployeeForm({
   services,
   isNew,
   submitLabel,
+  onDone,
 }: {
   action: (state: EmployeeFormState, formData: FormData) => Promise<EmployeeFormState>;
   defaults: EmployeeDefaults;
   services: { id: number; name: string }[];
   isNew: boolean;
   submitLabel: string;
+  onDone: () => void;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
+  useEffect(() => {
+    if (state.ok) onDone();
+  }, [state, onDone]);
   return (
     <form action={formAction} className="stack">
       {state.error ? (

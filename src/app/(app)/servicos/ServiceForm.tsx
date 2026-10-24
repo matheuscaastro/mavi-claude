@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import type { ServiceFormState } from "./actions";
 
 export type ServiceDefaults = {
@@ -17,12 +17,17 @@ export default function ServiceForm({
   action,
   defaults,
   submitLabel,
+  onDone,
 }: {
   action: (state: ServiceFormState, formData: FormData) => Promise<ServiceFormState>;
   defaults: ServiceDefaults;
   submitLabel: string;
+  onDone: () => void;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
+  useEffect(() => {
+    if (state.ok) onDone();
+  }, [state, onDone]);
   return (
     <form action={formAction} className="stack">
       {state.error ? (

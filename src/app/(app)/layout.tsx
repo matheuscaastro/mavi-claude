@@ -1,6 +1,6 @@
 import { requireUser } from "@/lib/auth";
 import { can, ROLE_LABEL } from "@/lib/permissions";
-import Nav, { type NavItem } from "@/components/Nav";
+import AppShell, { type NavItem } from "@/components/AppShell";
 import { logoutAction } from "../login/actions";
 
 export const dynamic = "force-dynamic";
@@ -23,29 +23,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     .toUpperCase();
 
   return (
-    <div className="shell">
-      <aside className="sidebar">
-        <div className="logo">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.jpg" alt="MAVI Podologia" />
-        </div>
-        <Nav items={items} />
-        <div className="user">
-          <span className="avatar" aria-hidden="true">
-            {initials}
-          </span>
-          <div className="small" style={{ lineHeight: 1.3 }}>
-            <div style={{ fontWeight: 600 }}>{user.name}</div>
-            <div className="tiny" style={{ color: "#c9d8d3" }}>
-              {ROLE_LABEL[user.accessRole]}
-            </div>
-            <form action={logoutAction}>
-              <button type="submit">Sair</button>
-            </form>
-          </div>
-        </div>
-      </aside>
-      <main className="content">{children}</main>
-    </div>
+    <AppShell items={items} userName={user.name} roleLabel={ROLE_LABEL[user.accessRole]} initials={initials} logout={logoutAction}>
+      {children}
+    </AppShell>
   );
 }

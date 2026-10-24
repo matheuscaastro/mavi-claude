@@ -1,17 +1,16 @@
-import Link from "next/link";
 import { and, asc, eq, ilike, or, sql } from "drizzle-orm";
 import { db } from "@db/index";
 import { clients } from "@db/schema";
 import { requireUser } from "@/lib/auth";
 import { can } from "@/lib/permissions";
 import { formatPhone } from "@/lib/phone";
-import { Icon } from "@/components/icons";
+import ClientsManager, { type ClientRow } from "./ClientsManager";
 
 export const metadata = { title: "Clientes" };
 
-export default async function ClientsPage({ searchParams }: { searchParams: Promise<{ q?: string; inativas?: string }> }) {
+export default async function ClientsPage({ searchParams }: { searchParams: Promise<{ q?: string; inativas?: string; novo?: string }> }) {
   const user = await requireUser("clients.view");
-  const { q = "", inativas } = await searchParams;
+  const { q = "", inativas, novo } = await searchParams;
   const term = q.trim();
   const digits = term.replace(/\D/g, "");
 
@@ -25,17 +24,22 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
     .orderBy(asc(sql`lower(${clients.name})`))
     .limit(200);
 
-  return (
-    <>
-      <div className="topbar">
-        <h1 className="page-title">Clientes</h1>
-        {can(user.accessRole, "clients.edit") ? (
-          <Link className="btn" href="/clientes/novo">
-            <Icon name="plus" /> Nova cliente
-          </Link>
-        ) : null}
-      </div>
+  const data: ClientRow[] = rows.map((c) => ({
+    id: c.id,
+    name: c.name,
+    phone: c.phone,
+    phoneFmt: formatPhone(c.phone),
+    email: c.email,
+    birthDate: c.birthDate ?? "",
+    birthLabel: c.birthDate ? c.birthDate.split("-").reverse().slice(0, 2).join("/") : "",
+    cpf: c.cpf,
+    notes: c.notes,
+    whatsappOptIn: c.whatsappOptIn,
+    active: c.active,
+  }));
 
+  return (
+    <ClientsManager rows={data} canEdit={can(user.accessRole, "clients.edit")} autoOpenNew={novo === "1"}>
       <form className="row" style={{ marginBottom: 16 }}>
         <input name="q" defaultValue={term} placeholder="Buscar por nome ou telefone" style={{ maxWidth: 340 }} />
         <label className="check small">
@@ -45,47 +49,6 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
           Buscar
         </button>
       </form>
-
-      <div className="card" style={{ padding: 0, overflowX: "auto" }}>
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Nome</th>
-              <th>Telefone</th>
-              <th>Aniversário</th>
-              <th>WhatsApp</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((c) => (
-              <tr key={c.id}>
-                <td>
-                  <Link className="name" href={`/clientes/${c.id}`}>
-                    {c.name}
-                  </Link>{" "}
-                  {!c.active ? <span className="chip gray">Inativa</span> : null}
-                </td>
-                <td>{formatPhone(c.phone)}</td>
-                <td>{c.birthDate ? c.birthDate.split("-").reverse().slice(0, 2).join("/") : "—"}</td>
-                <td>{c.whatsappOptIn ? "Autorizado" : "—"}</td>
-                <td className="right">
-                  <Link href={`/agenda/novo?cliente=${c.id}`} className="small">
-                    Agendar
-                  </Link>
-                </td>
-              </tr>
-            ))}
-            {rows.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="muted">
-                  Nenhuma cliente encontrada.
-                </td>
-              </tr>
-            ) : null}
-          </tbody>
-        </table>
-      </div>
-    </>
+    </ClientsManager>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import type { ClientFormState } from "./actions";
 
 export type ClientDefaults = {
@@ -17,12 +17,18 @@ export default function ClientForm({
   action,
   defaults,
   submitLabel,
+  onDone,
 }: {
   action: (state: ClientFormState, formData: FormData) => Promise<ClientFormState>;
   defaults: ClientDefaults;
   submitLabel: string;
+  /** Chamado quando salvou com sucesso (ex.: fechar o modal). Sem ele, mostra "Dados salvos". */
+  onDone?: () => void;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
+  useEffect(() => {
+    if (state.ok) onDone?.();
+  }, [state, onDone]);
   return (
     <form action={formAction} className="stack">
       {state.error ? (
@@ -30,6 +36,7 @@ export default function ClientForm({
           {state.error}
         </div>
       ) : null}
+      {state.ok && !onDone ? <div className="notice ok">Dados salvos.</div> : null}
       <label className="field">
         <span className="label">Nome completo</span>
         <input name="name" defaultValue={defaults.name} required />

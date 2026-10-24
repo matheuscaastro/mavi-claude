@@ -2,15 +2,15 @@
 
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@db/index";
 import { clients } from "@db/schema";
 import { requireUser } from "@/lib/auth";
+import { isUniqueViolation } from "@/lib/db-errors";
 import { normalizePhone } from "@/lib/phone";
 import { isValidDate } from "@/lib/time";
 
-export type ClientFormState = { error?: string };
+export type ClientFormState = { error?: string; ok?: boolean };
 
 const schema = z.object({
   name: z.string().trim().min(2, "Informe o nome da cliente."),
@@ -48,24 +48,19 @@ function read(formData: FormData) {
   } as const;
 }
 
-function isUniqueViolation(e: unknown) {
-  return typeof e === "object" && e !== null && (e as { code?: string }).code === "23505";
-}
 
 export async function createClient(_p: ClientFormState, formData: FormData): Promise<ClientFormState> {
   await requireUser("clients.edit");
   const r = read(formData);
   if ("error" in r) return { error: r.error };
-  let id: number;
   try {
-    const [row] = await db.insert(clients).values(r.value).returning({ id: clients.id });
-    id = row.id;
+    await db.insert(clients).values(r.value);
   } catch (e) {
     if (isUniqueViolation(e)) return { error: "Já existe uma cliente com esse telefone." };
     throw e;
   }
   revalidatePath("/clientes");
-  redirect(`/clientes/${id}?salvo=1`);
+  return { ok: true };
 }
 
 export async function updateClient(id: number, _p: ClientFormState, formData: FormData): Promise<ClientFormState> {
@@ -79,12 +74,13 @@ export async function updateClient(id: number, _p: ClientFormState, formData: Fo
     throw e;
   }
   revalidatePath("/clientes");
-  redirect(`/clientes/${id}?salvo=1`);
+  revalidatePath(`/clientes/${id}`);
+  return { ok: true };
 }
 
 export async function setClientActive(id: number, active: boolean) {
   await requireUser("clients.edit");
   await db.update(clients).set({ active }).where(eq(clients.id, id));
   revalidatePath("/clientes");
-  redirect(`/clientes/${id}`);
+  revalidatePath(`/clientes/${id}`);
 }

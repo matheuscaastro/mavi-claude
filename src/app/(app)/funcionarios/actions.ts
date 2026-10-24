@@ -2,14 +2,14 @@
 
 import { and, eq, ne } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@db/index";
 import { employeeServices, employees } from "@db/schema";
 import { hashPassword, isRole, requireUser } from "@/lib/auth";
+import { isUniqueViolation } from "@/lib/db-errors";
 import { normalizePhone } from "@/lib/phone";
 
-export type EmployeeFormState = { error?: string };
+export type EmployeeFormState = { error?: string; ok?: boolean };
 
 const schema = z.object({
   name: z.string().trim().min(2, "Informe o nome."),
@@ -44,7 +44,6 @@ function read(formData: FormData) {
   } as const;
 }
 
-const isUniqueViolation = (e: unknown) => typeof e === "object" && e !== null && (e as { code?: string }).code === "23505";
 
 async function saveServices(employeeId: number, serviceIds: number[], performs: boolean) {
   await db.delete(employeeServices).where(eq(employeeServices.employeeId, employeeId));
@@ -71,7 +70,7 @@ export async function createEmployee(_p: EmployeeFormState, formData: FormData):
   }
   await saveServices(id, r.serviceIds, r.value.performsServices);
   revalidatePath("/funcionarios");
-  redirect("/funcionarios");
+  return { ok: true };
 }
 
 export async function updateEmployee(id: number, _p: EmployeeFormState, formData: FormData): Promise<EmployeeFormState> {
@@ -99,13 +98,13 @@ export async function updateEmployee(id: number, _p: EmployeeFormState, formData
   }
   await saveServices(id, r.serviceIds, r.value.performsServices);
   revalidatePath("/funcionarios");
-  redirect("/funcionarios");
+  return { ok: true };
 }
 
-export async function setEmployeeActive(id: number, active: boolean) {
+export async function setEmployeeActive(id: number, active: boolean): Promise<EmployeeFormState> {
   const me = await requireUser("employees.manage");
   if (!active) {
-    if (me.id === id) redirect(`/funcionarios/${id}?erro=voce`);
+    if (me.id === id) return { error: "Você não pode inativar o próprio acesso." };
     const [target] = await db.select().from(employees).where(eq(employees.id, id));
     if (target && isRole(target, "admin")) {
       const [other] = await db
@@ -113,10 +112,10 @@ export async function setEmployeeActive(id: number, active: boolean) {
         .from(employees)
         .where(and(eq(employees.accessRole, "admin"), eq(employees.active, true), ne(employees.id, id)))
         .limit(1);
-      if (!other) redirect(`/funcionarios/${id}?erro=admin`);
+      if (!other) return { error: "Precisa existir ao menos uma administradora ativa." };
     }
   }
   await db.update(employees).set({ active }).where(eq(employees.id, id));
   revalidatePath("/funcionarios");
-  redirect("/funcionarios");
+  return { ok: true };
 }

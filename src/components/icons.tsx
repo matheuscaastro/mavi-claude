@@ -42,6 +42,20 @@ const PATHS: Record<string, ReactNode> = {
       <circle cx="18" cy="18" r="2" />
     </>
   ),
+  menu: <path d="M4 6h16M4 12h16M4 18h16" />,
+  close: <path d="M6 6l12 12M18 6 6 18" />,
+  panel: (
+    <>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <path d="M9 4v16" />
+    </>
+  ),
+  logout: (
+    <>
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <path d="m16 17 5-5-5-5M21 12H9" />
+    </>
+  ),
   plus: <path d="M12 5v14M5 12h14" />,
   left: <path d="m15 18-6-6 6-6" />,
   right: <path d="m9 18 6-6-6-6" />,

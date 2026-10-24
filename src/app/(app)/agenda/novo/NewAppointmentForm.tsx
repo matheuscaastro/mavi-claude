@@ -77,7 +77,7 @@ export default function NewAppointmentForm(props: {
               </option>
             ))}
           </select>
-          <Link href="/clientes/novo" className="small">
+          <Link href="/clientes?novo=1" className="small">
             Cliente nova? Cadastre primeiro.
           </Link>
         </div>
