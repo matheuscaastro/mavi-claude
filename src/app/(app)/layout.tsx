@@ -9,6 +9,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const user = await requireUser();
 
   const items: NavItem[] = [{ href: "/agenda", label: "Agenda", icon: "calendar" }];
+  if (can(user.accessRole, "cash.view")) items.push({ href: "/caixa", label: "Caixa", icon: "wallet" });
   if (can(user.accessRole, "clients.view")) items.push({ href: "/clientes", label: "Clientes", icon: "users" });
   if (can(user.accessRole, "employees.manage")) items.push({ href: "/funcionarios", label: "Funcionários", icon: "badge" });
   if (can(user.accessRole, "services.view")) items.push({ href: "/servicos", label: "Serviços", icon: "sparkles" });

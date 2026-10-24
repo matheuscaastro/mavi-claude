@@ -999,3 +999,55 @@ table.table {
     display: none !important;
   }
 }
+
+/* ---------- Página pública ---------- */
+
+.public-wrap {
+  min-height: 100vh;
+  background: var(--tint, #f3f7f5);
+}
+
+.public-header {
+  background: var(--green);
+  display: flex;
+  justify-content: center;
+  padding: 18px 16px;
+}
+
+.public-header img {
+  height: 64px;
+  width: auto;
+}
+
+.public-main {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.public-main .btn {
+  min-height: 46px;
+}
+
+.hp {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.steps {
+  display: flex;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.steps .on {
+  color: var(--green);
+  font-weight: 600;
+}

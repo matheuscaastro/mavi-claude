@@ -1,5 +1,6 @@
 import {
   boolean,
+  check,
   date,
   index,
   integer,
@@ -12,6 +13,7 @@ import {
   timestamp,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 /** Perfis de acesso (seção 3 do PRD). */
 export const accessRole = pgEnum("access_role", ["admin", "reception", "professional"]);
@@ -25,6 +27,9 @@ export const appointmentStatus = pgEnum("appointment_status", [
   "cancelled", // Cancelado
   "no_show", // Faltou
 ]);
+
+export const paymentMethod = pgEnum("payment_method", ["cash", "pix", "debit", "credit", "other"]);
+export const cashKind = pgEnum("cash_kind", ["income", "expense"]);
 
 export const appointmentOrigin = pgEnum("appointment_origin", ["counter", "online"]);
 
@@ -127,10 +132,13 @@ export const appointments = pgTable(
     discountCents: integer("discount_cents").notNull().default(0),
     notes: text("notes").notNull().default(""),
     createdBy: integer("created_by").references(() => employees.id),
+    /** Código secreto do link "meu agendamento" enviado à cliente (agendamentos online). */
+    publicToken: text("public_token"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
+    uniqueIndex("appointments_public_token_key").on(t.publicToken),
     index("appointments_start_idx").on(t.startsAt),
     index("appointments_employee_idx").on(t.employeeId, t.startsAt),
     index("appointments_client_idx").on(t.clientId),
@@ -209,6 +217,33 @@ export const appointmentEvents = pgTable(
   (t) => [index("appointment_events_appt_idx").on(t.appointmentId)],
 );
 
+/** Lançamentos do caixa. Pagamento de atendimento tem appointmentId; o resto é receita/despesa avulsa. */
+export const cashEntries = pgTable(
+  "cash_entries",
+  {
+    id: serial("id").primaryKey(),
+    kind: cashKind("kind").notNull(),
+    method: paymentMethod("method").notNull(),
+    amountCents: integer("amount_cents").notNull(),
+    category: text("category").notNull().default(""),
+    description: text("description").notNull().default(""),
+    /** Dia do lançamento no fuso do salão (YYYY-MM-DD). */
+    occurredOn: date("occurred_on").notNull(),
+    appointmentId: integer("appointment_id").references(() => appointments.id),
+    createdBy: integer("created_by").references(() => employees.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    /** Em vez de apagar, o lançamento é estornado e some dos totais. */
+    voidedAt: timestamp("voided_at", { withTimezone: true }),
+    voidedBy: integer("voided_by").references(() => employees.id),
+  },
+  (t) => [
+    check("cash_entries_amount_positive", sql`${t.amountCents} > 0`),
+    index("cash_entries_day_idx").on(t.occurredOn),
+    index("cash_entries_appt_idx").on(t.appointmentId),
+  ],
+);
+
+export type CashEntry = typeof cashEntries.$inferSelect;
 export type Employee = typeof employees.$inferSelect;
 export type Service = typeof services.$inferSelect;
 export type Client = typeof clients.$inferSelect;

@@ -52,6 +52,8 @@ export type AvailabilityInput = {
   ignoreAppointmentId?: number;
   /** Aplica antecedência mínima (uso público). Na recepção, só bloqueia o passado. */
   applyMinNotice?: boolean;
+  /** Uso público: só serviços marcados como disponíveis para agendamento online. */
+  publicOnly?: boolean;
   now?: Date;
 };
 
@@ -74,7 +76,7 @@ export async function getAvailability(input: AvailabilityInput): Promise<Availab
   const empty: AvailabilityResult = { closed: false, durationMin: 0, bufferMin: 0, totalCents: 0, slots: [], eligible: [] };
 
   const chosen = input.serviceIds.length
-    ? await db.select().from(services).where(and(inArray(services.id, input.serviceIds), eq(services.active, true)))
+    ? await db.select().from(services).where(and(inArray(services.id, input.serviceIds), eq(services.active, true), input.publicOnly ? eq(services.publicVisible, true) : undefined))
     : [];
   if (chosen.length === 0 || chosen.length !== new Set(input.serviceIds).size) return empty;
 
@@ -164,6 +166,8 @@ export type BookInput = {
   notes?: string;
   origin: "counter" | "online";
   createdBy: number | null;
+  /** Código do link "meu agendamento" (só online). */
+  publicToken?: string;
 };
 
 export type BookResult = { ok: true; id: number } | { ok: false; error: string };
@@ -196,6 +200,7 @@ export async function bookAppointment(input: BookInput): Promise<BookResult> {
           totalCents,
           notes: input.notes ?? "",
           createdBy: input.createdBy,
+          publicToken: input.publicToken ?? null,
         })
         .returning({ id: appointments.id });
       await tx.insert(appointmentItems).values(

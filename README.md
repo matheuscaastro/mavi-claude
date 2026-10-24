@@ -1,7 +1,7 @@
 # MAVI Podologia — sistema de gestão
 
-Agenda com cards dinâmicos, cadastros (clientes, funcionários, serviços) e configurações do salão.
-Próximas fases: página pública de agendamento, fluxo de caixa e WhatsApp (API oficial).
+Agenda com cards dinâmicos, cadastros (clientes, funcionários, serviços), configurações do salão, **fluxo de caixa** e **página pública de agendamento** (`/agendar`).
+Próxima fase: WhatsApp (API oficial) e ficha clínica.
 
 ## Stack
 
@@ -32,6 +32,18 @@ npm run dev                 # http://localhost:3000
 
 Senha de todos: valor de `SEED_PASSWORD` (padrão `mavi1234`). **Troque as senhas antes de colocar em produção** e não rode o seed em produção.
 
+## Página pública (`/agendar`)
+
+Aberta, sem login. A cliente escolhe um ou mais serviços, profissional (ou "qualquer disponível"), dia e horário, e informa nome e WhatsApp.
+Ela recebe um link secreto (`/agendar/meu/<código>`) para cancelar ou remarcar até o prazo configurado (padrão 24 h antes).
+Proteções: limite de tentativas por IP, campo-isca contra robôs, no máximo 3 agendamentos online em aberto por cliente, horário conferido de novo no servidor e travado no banco.
+Só aparecem serviços marcados como "disponível para agendamento online" e feitos por alguma profissional ativa.
+
+## Caixa
+
+- Recepção e Administradora registram o pagamento dentro do atendimento (total ou parcial; Dinheiro, Pix, Débito, Crédito).
+- A Administradora vê a tela **Caixa**: entradas, saídas e saldo por dia/semana/mês ou período livre, lança despesas e receitas avulsas e estorna lançamentos (nada é apagado).
+
 ## Comandos
 
 - `npm test` — testes das regras de horário livre
@@ -45,6 +57,8 @@ Senha de todos: valor de `SEED_PASSWORD` (padrão `mavi1234`). **Troque as senha
 | Agenda de todas | ✔ | ✔ | só a própria |
 | Agendar / remarcar / cancelar | ✔ | ✔ | — |
 | Iniciar / concluir o próprio atendimento | ✔ | ✔ | ✔ |
+| Registrar pagamento do atendimento | ✔ | ✔ | — |
+| Tela Caixa (totais, despesas, estorno) | ✔ | — | — |
 | Clientes | editar | editar | ver |
 | Serviços | editar | ver | ver |
 | Funcionários e configurações | ✔ | — | — |

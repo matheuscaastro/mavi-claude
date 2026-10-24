@@ -1,15 +1,17 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq, isNull } from "drizzle-orm";
 import { db } from "@db/index";
-import { appointmentEvents, appointmentItems, appointments, clients, employees, type AppointmentStatus } from "@db/schema";
+import { appointmentEvents, appointmentItems, appointments, cashEntries, clients, employees, type AppointmentStatus } from "@db/schema";
 import { requireUser } from "@/lib/auth";
 import { can } from "@/lib/permissions";
 import { formatPhone } from "@/lib/phone";
-import { formatBRL } from "@/lib/money";
+import { centsToInput, formatBRL } from "@/lib/money";
+import { METHOD_LABEL } from "@/lib/cash";
 import { formatDateLong, formatDuration, localDate, localTime } from "@/lib/time";
 import { STATUS_LABEL } from "@/lib/status";
 import RescheduleForm from "./RescheduleForm";
+import PaymentForm from "./PaymentForm";
 import { changeStatus } from "../actions";
 
 export const metadata = { title: "Atendimento" };
@@ -53,12 +55,20 @@ export default async function AppointmentPage({ params }: { params: Promise<{ id
   const isOwn = a.employeeId === user.id;
   if (!can(user.accessRole, "agenda.viewAll") && !isOwn) notFound();
 
-  const [items, events] = await Promise.all([
+  const [payments, items, events] = await Promise.all([
+    db
+      .select()
+      .from(cashEntries)
+      .where(and(eq(cashEntries.appointmentId, id), eq(cashEntries.kind, "income"), isNull(cashEntries.voidedAt)))
+      .orderBy(asc(cashEntries.id)),
     db.select().from(appointmentItems).where(eq(appointmentItems.appointmentId, id)).orderBy(asc(appointmentItems.id)),
     db.select().from(appointmentEvents).where(eq(appointmentEvents.appointmentId, id)).orderBy(asc(appointmentEvents.at)),
   ]);
 
   const actions = NEXT[a.status].filter((n) => canEdit || (isOwn && can(user.accessRole, "agenda.updateOwnStatus") && (n.to === "in_progress" || n.to === "completed")));
+  const paid = payments.reduce((a, p) => a + p.amountCents, 0);
+  const due = a.totalCents - a.discountCents - paid;
+  const canPay = can(user.accessRole, "cash.register") && a.status !== "cancelled" && due > 0;
   const canReschedule = canEdit && a.status !== "cancelled" && a.status !== "completed";
   const date = localDate(a.startsAt);
 
@@ -113,6 +123,34 @@ export default async function AppointmentPage({ params }: { params: Promise<{ id
               </div>
             ) : null}
           </div>
+
+          {can(user.accessRole, "cash.register") && a.status !== "cancelled" ? (
+            <div className="card">
+              <div className="section-title">Pagamento</div>
+              <p className="small" style={{ marginTop: 0 }}>
+                {due <= 0 ? (
+                  <span className="chip status status-confirmed">Pago</span>
+                ) : (
+                  <>
+                    Falta receber <strong>{formatBRL(due)}</strong> de {formatBRL(a.totalCents - a.discountCents)}
+                  </>
+                )}
+              </p>
+              {payments.length ? (
+                <div className="stack small" style={{ marginBottom: 12 }}>
+                  {payments.map((p) => (
+                    <div key={p.id} className="row spread">
+                      <span>
+                        {METHOD_LABEL[p.method]} · {p.occurredOn.split("-").reverse().join("/")}
+                      </span>
+                      <strong>{formatBRL(p.amountCents)}</strong>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+              {canPay ? <PaymentForm appointmentId={a.id} dueInput={centsToInput(due)} /> : null}
+            </div>
+          ) : null}
 
           {canReschedule ? (
             <div className="card">
