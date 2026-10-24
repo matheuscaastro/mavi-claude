@@ -44,10 +44,15 @@ Só aparecem serviços marcados como "disponível para agendamento online" e fei
 - Recepção e Administradora registram o pagamento dentro do atendimento (total ou parcial; Dinheiro, Pix, Débito, Crédito).
 - A Administradora vê a tela **Caixa**: entradas, saídas e saldo por dia/semana/mês ou período livre, lança despesas e receitas avulsas e estorna lançamentos (nada é apagado).
 
+## Colocar no ar
+
+Veja [DEPLOY.md](DEPLOY.md) (Railway + domínio).
+
 ## Comandos
 
 - `npm test` — testes das regras de horário livre
 - `npm run typecheck` · `npm run build`
+- `npm run db:create-admin` — cria/redefine a administradora (uso em produção; veja DEPLOY.md)
 - `npm run db:generate` — gera migração a partir de `db/schema.ts`
 
 ## Perfis de acesso
