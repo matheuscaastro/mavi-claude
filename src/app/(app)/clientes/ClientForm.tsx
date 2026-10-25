@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect } from "react";
+import MaskedInput from "@/components/MaskedInput";
 import type { ClientFormState } from "./actions";
 
 export type ClientDefaults = {
@@ -44,7 +45,7 @@ export default function ClientForm({
       <div className="grid-2">
         <label className="field">
           <span className="label">Telefone (WhatsApp)</span>
-          <input name="phone" defaultValue={defaults.phone} inputMode="tel" placeholder="(11) 91234-5678" required />
+          <MaskedInput kind="phone" name="phone" defaultValue={defaults.phone} required />
         </label>
         <label className="field">
           <span className="label">Data de nascimento</span>
@@ -56,7 +57,7 @@ export default function ClientForm({
         </label>
         <label className="field">
           <span className="label">CPF</span>
-          <input name="cpf" defaultValue={defaults.cpf} inputMode="numeric" />
+          <MaskedInput kind="cpf" name="cpf" defaultValue={defaults.cpf} />
         </label>
       </div>
       <label className="field">

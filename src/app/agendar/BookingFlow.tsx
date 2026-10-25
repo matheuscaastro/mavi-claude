@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useMemo, useState } from "react";
+import MaskedInput from "@/components/MaskedInput";
 import { bookPublic, type FormState } from "./actions";
 
 type Svc = { id: number; name: string; description: string; durationMin: number; priceCents: number };
@@ -180,7 +181,7 @@ export default function BookingFlow(props: { services: Svc[]; staff: Staff[]; al
             </label>
             <label className="field">
               <span className="label">WhatsApp (com DDD)</span>
-              <input name="phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="(11) 91234-5678" required />
+              <MaskedInput kind="phone" name="phone" autoComplete="tel" required />
             </label>
             <label className="field">
               <span className="label">Data de nascimento (opcional)</span>

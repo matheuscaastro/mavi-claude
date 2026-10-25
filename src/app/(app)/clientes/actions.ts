@@ -35,13 +35,15 @@ function read(formData: FormData) {
   const phone = normalizePhone(v.phone);
   if (!phone) return { error: "Telefone inválido. Use DDD + número." } as const;
   if (v.birthDate && !isValidDate(v.birthDate)) return { error: "Data de nascimento inválida." } as const;
+  const cpf = v.cpf.replace(/\D/g, "");
+  if (cpf && cpf.length !== 11) return { error: "CPF inválido: informe os 11 números." } as const;
   return {
     value: {
       name: v.name,
       phone,
       email: v.email,
       birthDate: v.birthDate || null,
-      cpf: v.cpf.replace(/\D/g, ""),
+      cpf,
       notes: v.notes,
       whatsappOptIn: formData.get("whatsappOptIn") === "on",
     },

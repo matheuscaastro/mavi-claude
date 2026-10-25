@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect } from "react";
+import MaskedInput from "@/components/MaskedInput";
 import type { EmployeeFormState } from "./actions";
 
 export type EmployeeDefaults = {
@@ -53,7 +54,7 @@ export default function EmployeeForm({
         </label>
         <label className="field">
           <span className="label">Telefone</span>
-          <input name="phone" defaultValue={defaults.phone} inputMode="tel" />
+          <MaskedInput kind="phone" name="phone" defaultValue={defaults.phone} />
         </label>
         <label className="field">
           <span className="label">E-mail (usado no login)</span>
