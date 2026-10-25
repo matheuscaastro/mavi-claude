@@ -7,7 +7,7 @@ import { createAppointment, type FormState } from "../actions";
 type Svc = { id: number; name: string; durationMin: number; priceCents: number };
 type Staff = { id: number; name: string; color: string };
 type Slot = { time: string; employeeId: number };
-type Availability = { closed: boolean; slots: Slot[]; durationMin: number; totalCents: number };
+type Availability = { closed: boolean; slots: Slot[]; durationMin: number; totalCents: number; reason?: "no_staff" | "staff_not_eligible"; eligible?: { id: number }[] };
 
 const brl = (c: number) => (c / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const dur = (m: number) => (m >= 60 ? `${Math.floor(m / 60)}h${m % 60 ? String(m % 60).padStart(2, "0") : ""}` : `${m} min`);
@@ -119,8 +119,14 @@ export default function NewAppointmentForm(props: {
           {serviceIds.length === 0 ? <div className="muted small">Escolha ao menos um serviço para ver os horários.</div> : null}
           {loading ? <div className="muted small">Buscando horários…</div> : null}
           {av && !loading && av.closed ? <div className="notice">O salão está fechado neste dia.</div> : null}
-          {av && !loading && !av.closed && av.slots.length === 0 ? (
-            <div className="notice">Nenhum horário livre neste dia para essa combinação.</div>
+          {av && !loading && av.reason === "no_staff" ? (
+            <div className="notice error">
+              Nenhuma profissional ativa realiza {serviceIds.length > 1 ? "todos esses serviços juntos" : "esse serviço"}. Em <Link href="/funcionarios">Funcionários</Link>, abra a profissional e marque o serviço em “Serviços que realiza” (e confira se “Realiza atendimentos” está ligado).
+            </div>
+          ) : null}
+          {av && !loading && av.reason === "staff_not_eligible" ? <div className="notice">A profissional escolhida não realiza {serviceIds.length > 1 ? "todos esses serviços" : "esse serviço"}. Escolha outra ou “Qualquer disponível”.</div> : null}
+          {av && !loading && !av.closed && !av.reason && av.slots.length === 0 ? (
+            <div className="notice">Nenhum horário livre neste dia para essa combinação. Tente outro dia.</div>
           ) : null}
           {av && !loading && av.slots.length > 0 ? (
             <div className="slot-grid" role="radiogroup" aria-label="Horário">

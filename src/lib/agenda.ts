@@ -66,6 +66,8 @@ export type AvailabilityResult = {
   /** Um horário por início possível, já com a profissional escolhida. */
   slots: SlotOption[];
   eligible: { id: number; name: string }[];
+  /** Por que não há horários (para a tela explicar): ninguém faz esses serviços, ou a escolhida não faz. */
+  reason?: "no_staff" | "staff_not_eligible";
 };
 
 /**
@@ -101,7 +103,7 @@ export async function getAvailability(input: AvailabilityInput): Promise<Availab
     .where(inArray(employeeServices.serviceId, input.serviceIds));
   const eligible = staff.filter((e) => input.serviceIds.every((sid) => links.some((l) => l.employeeId === e.id && l.serviceId === sid)));
   const candidates = input.employeeId === null ? eligible : eligible.filter((e) => e.id === input.employeeId);
-  if (candidates.length === 0) return { ...base, eligible };
+  if (candidates.length === 0) return { ...base, eligible, reason: eligible.length === 0 ? "no_staff" : "staff_not_eligible" };
 
   const ids = candidates.map((c) => c.id);
   const { from, to } = dayRange(input.date);

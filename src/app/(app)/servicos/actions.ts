@@ -1,10 +1,10 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@db/index";
-import { services } from "@db/schema";
+import { employeeServices, employees, services } from "@db/schema";
 import { requireUser } from "@/lib/auth";
 import { parseBRL } from "@/lib/money";
 
@@ -38,7 +38,12 @@ export async function createService(_p: ServiceFormState, formData: FormData): P
   await requireUser("services.manage");
   const r = read(formData);
   if ("error" in r) return { error: r.error };
-  await db.insert(services).values(r.value);
+  // Serviço novo já nasce ligado a quem atende, igual ao cadastro de funcionária (todas marcadas por padrão).
+  await db.transaction(async (tx) => {
+    const [created] = await tx.insert(services).values(r.value).returning({ id: services.id });
+    const staff = await tx.select({ id: employees.id }).from(employees).where(and(eq(employees.active, true), eq(employees.performsServices, true)));
+    if (staff.length) await tx.insert(employeeServices).values(staff.map((e) => ({ employeeId: e.id, serviceId: created.id })));
+  });
   revalidatePath("/servicos");
   return { ok: true };
 }
