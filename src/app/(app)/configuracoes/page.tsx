@@ -4,7 +4,7 @@ import { salonExceptions, salonHours } from "@db/schema";
 import { requireUser } from "@/lib/auth";
 import { getSettings } from "@/lib/agenda";
 import { formatDateShort, todayLocal } from "@/lib/time";
-import { ExceptionForm, HoursForm, RulesForm } from "./Forms";
+import { ExceptionForm, HoursForm, MessagingForm, RulesForm } from "./Forms";
 import { removeException } from "./actions";
 
 export const metadata = { title: "Configurações" };
@@ -32,6 +32,10 @@ export default async function SettingsPage() {
           <div className="card">
             <div className="section-title">Regras de agendamento</div>
             <RulesForm settings={settings} />
+          </div>
+          <div className="card">
+            <div className="section-title">Mensagens de WhatsApp</div>
+            <MessagingForm settings={settings} />
           </div>
         </div>
         <div className="stack grow-2">

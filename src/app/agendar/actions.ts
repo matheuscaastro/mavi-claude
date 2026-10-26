@@ -8,6 +8,7 @@ import { z } from "zod";
 import { db } from "@db/index";
 import { appointmentEvents, appointmentItems, appointments, clients } from "@db/schema";
 import { bookAppointment, getAvailability, getSettings, isOverlapViolation } from "@/lib/agenda";
+import { safeSync } from "@/lib/messages/queue";
 import { normalizePhone } from "@/lib/phone";
 import { allow, clientIp } from "@/lib/rate-limit";
 import { addDays, isValidDate, isValidTime, localDateTime, todayLocal } from "@/lib/time";
@@ -79,6 +80,7 @@ export async function bookPublic(_p: FormState, formData: FormData): Promise<For
   const token = randomBytes(16).toString("hex");
   const r = await bookAppointment({ clientId: client.id, employeeId: v.employeeId, date: v.date, time: v.time, serviceIds, origin: "online", createdBy: null, publicToken: token });
   if (!r.ok) return { error: r.error };
+  await safeSync(r.id, { confirm: true });
   revalidatePath("/agenda");
   redirect(`/agendar/meu/${token}?novo=1`);
 }
@@ -104,6 +106,7 @@ export async function cancelPublic(token: string) {
       await tx.update(appointments).set({ status: "cancelled", updatedAt: new Date() }).where(eq(appointments.id, appt.id));
       await tx.insert(appointmentEvents).values({ appointmentId: appt.id, employeeId: null, action: "status", details: { from: appt.status, to: "cancelled", by: "client" } });
     });
+    await safeSync(appt.id, { confirm: false });
     revalidatePath("/agenda");
   }
   redirect(`/agendar/meu/${token}`);
@@ -145,6 +148,7 @@ export async function reschedulePublic(token: string, _p: FormState, formData: F
     if (isOverlapViolation(e)) return { error: "Esse horário acabou de ser ocupado. Escolha outro." };
     throw e;
   }
+  await safeSync(appt.id, { confirm: true });
   revalidatePath("/agenda");
   redirect(`/agendar/meu/${token}?remarcado=1`);
 }

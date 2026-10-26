@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE, verifySession } from "@/lib/session-token";
 
 /** Caminhos que qualquer pessoa pode abrir sem login. A página pública de agendamento entra aqui depois. */
-const PUBLIC_PREFIXES = ["/login", "/agendar", "/api/public", "/api/health"];
+const PUBLIC_PREFIXES = ["/login", "/agendar", "/api/public", "/api/health", "/api/cron"];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;

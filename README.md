@@ -74,3 +74,22 @@ Veja [DEPLOY.md](DEPLOY.md) (Railway + domínio).
 - Serviço do atendimento é gravado com nome, duração e preço no momento do agendamento.
 - Telefone da cliente é único (só dígitos) — é como ela será reconhecida na página pública.
 - Horário do salão é editável em Configurações; a jornada da profissional segue o salão por padrão.
+
+## WhatsApp (fase 2)
+
+Confirmação ao agendar/remarcar, lembrete antes do atendimento e mensagem de aniversário.
+
+- **Liga/desliga e textos**: Configurações → Mensagens de WhatsApp. Vem desligado.
+- **Quem recebe**: só clientes com a autorização marcada (cadastro ou página pública).
+- **Histórico e fila**: menu Mensagens (botão “Processar fila agora”).
+- **Provedor** (`WHATSAPP_PROVIDER`): `log` (padrão, só registra) ou `twilio`
+  (`TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_FROM`).
+  Para falar fora da janela de 24h o WhatsApp exige modelos aprovados: informe
+  `TWILIO_CONTENT_SID_CONFIRMATION/_REMINDER/_BIRTHDAY`. Variáveis dos modelos, em ordem:
+  confirmação e lembrete → `{{1}}` nome, `{{2}}` serviços, `{{3}}` data, `{{4}}` hora, `{{5}}` profissional, `{{6}}` link;
+  aniversário → `{{1}}` nome.
+- **Agendador**: a confirmação sai na hora; lembretes e aniversários dependem de alguém chamar
+  `GET /api/cron/messages` com `Authorization: Bearer $CRON_SECRET` a cada 5–15 min
+  (um Cron Job do Render, cron-job.org etc.). `CRON_SECRET` precisa de 16+ caracteres.
+- Lembretes e aniversários só saem entre 8h e 20h (horário do salão). Remarcar ou cancelar descarta o lembrete antigo.
+- `APP_URL` define o endereço usado no link de remarcar/cancelar (no Render, `RENDER_EXTERNAL_URL` é usado se faltar).

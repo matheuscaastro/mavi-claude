@@ -1,4 +1,5 @@
 import "server-only";
+import { randomBytes } from "node:crypto";
 import { and, eq, gt, inArray, lt, ne } from "drizzle-orm";
 import { db } from "@db/index";
 import {
@@ -25,6 +26,16 @@ export const DEFAULT_SETTINGS = {
   cancelDeadlineHours: 24,
   slotStepMin: 15,
   allowAnyProfessional: true,
+  whatsappEnabled: false,
+  salonName: "MAVI",
+  confirmationEnabled: true,
+  reminderEnabled: true,
+  reminderHoursBefore: 24,
+  birthdayEnabled: true,
+  birthdayHour: 9,
+  confirmationText: "",
+  reminderText: "",
+  birthdayText: "",
 };
 
 export async function getSettings() {
@@ -200,7 +211,7 @@ export async function bookAppointment(input: BookInput): Promise<BookResult> {
           totalCents,
           notes: input.notes ?? "",
           createdBy: input.createdBy,
-          publicToken: input.publicToken ?? null,
+          publicToken: input.publicToken ?? randomBytes(16).toString("hex"),
         })
         .returning({ id: appointments.id });
       await tx.insert(appointmentItems).values(

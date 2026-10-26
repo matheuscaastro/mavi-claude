@@ -9,6 +9,7 @@ import { appointmentEvents, appointments, clients, employees, scheduleBlocks, ty
 import { requireUser } from "@/lib/auth";
 import { bookAppointment, getAvailability, isOverlapViolation } from "@/lib/agenda";
 import { can } from "@/lib/permissions";
+import { safeSync } from "@/lib/messages/queue";
 import { isValidDate, isValidTime, localDateTime, parseTime } from "@/lib/time";
 
 export type FormState = { error?: string };
@@ -46,6 +47,7 @@ export async function createAppointment(_p: FormState, formData: FormData): Prom
 
   const r = await bookAppointment({ ...v, serviceIds, origin: "counter", createdBy: user.id });
   if (!r.ok) return { error: r.error };
+  await safeSync(r.id, { confirm: true });
   revalidatePath("/agenda");
   redirect(`/agenda?data=${v.date}`);
 }
@@ -73,6 +75,7 @@ export async function changeStatus(id: number, next: AppointmentStatus) {
     await tx.update(appointments).set({ status: next, updatedAt: new Date() }).where(eq(appointments.id, id));
     await tx.insert(appointmentEvents).values({ appointmentId: id, employeeId: user.id, action: "status", details: { from: appt.status, to: next } });
   });
+  await safeSync(id, { confirm: false });
   revalidatePath("/agenda");
   redirect(`/agenda/${id}`);
 }
@@ -109,6 +112,7 @@ export async function rescheduleAppointment(id: number, _p: FormState, formData:
     if (isOverlapViolation(e)) return { error: "Esse horário acabou de ser ocupado. Escolha outro." };
     throw e;
   }
+  await safeSync(id, { confirm: true });
   revalidatePath("/agenda");
   redirect(`/agenda/${id}`);
 }

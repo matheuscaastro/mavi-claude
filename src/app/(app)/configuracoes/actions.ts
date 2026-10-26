@@ -81,3 +81,36 @@ export async function removeException(date: string) {
   revalidatePath("/configuracoes");
   redirect("/configuracoes");
 }
+
+const messagingSchema = z.object({
+  salonName: z.string().trim().min(1, "Informe o nome do salão.").max(60),
+  reminderHoursBefore: z.coerce.number().int().min(2, "O lembrete precisa sair com pelo menos 2 horas de antecedência.").max(168),
+  birthdayHour: z.coerce.number().int().min(8, "Aniversário a partir das 8h.").max(19, "Aniversário até as 19h."),
+  confirmationText: z.string().max(1000),
+  reminderText: z.string().max(1000),
+  birthdayText: z.string().max(1000),
+});
+
+export async function saveMessaging(_p: FormState, formData: FormData): Promise<FormState> {
+  await requireUser("settings.manage");
+  const parsed = messagingSchema.safeParse({
+    salonName: formData.get("salonName"),
+    reminderHoursBefore: formData.get("reminderHoursBefore"),
+    birthdayHour: formData.get("birthdayHour"),
+    confirmationText: String(formData.get("confirmationText") ?? "").trim(),
+    reminderText: String(formData.get("reminderText") ?? "").trim(),
+    birthdayText: String(formData.get("birthdayText") ?? "").trim(),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Valores inválidos." };
+  const values = {
+    ...parsed.data,
+    whatsappEnabled: formData.get("whatsappEnabled") === "on",
+    confirmationEnabled: formData.get("confirmationEnabled") === "on",
+    reminderEnabled: formData.get("reminderEnabled") === "on",
+    birthdayEnabled: formData.get("birthdayEnabled") === "on",
+  };
+  await db.insert(salonSettings).values({ id: 1, ...values }).onConflictDoUpdate({ target: salonSettings.id, set: values });
+  revalidatePath("/configuracoes");
+  revalidatePath("/mensagens");
+  return { ok: true };
+}

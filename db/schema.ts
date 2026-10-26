@@ -199,6 +199,18 @@ export const salonSettings = pgTable("salon_settings", {
   cancelDeadlineHours: integer("cancel_deadline_hours").notNull().default(24),
   slotStepMin: integer("slot_step_min").notNull().default(15),
   allowAnyProfessional: boolean("allow_any_professional").notNull().default(true),
+  /** WhatsApp (fase 2). Desligado por padrão: só envia depois que a administradora liga. */
+  whatsappEnabled: boolean("whatsapp_enabled").notNull().default(false),
+  salonName: text("salon_name").notNull().default("MAVI"),
+  confirmationEnabled: boolean("confirmation_enabled").notNull().default(true),
+  reminderEnabled: boolean("reminder_enabled").notNull().default(true),
+  reminderHoursBefore: integer("reminder_hours_before").notNull().default(24),
+  birthdayEnabled: boolean("birthday_enabled").notNull().default(true),
+  /** Hora do dia (0-23, horário do salão) em que a mensagem de aniversário pode sair. */
+  birthdayHour: integer("birthday_hour").notNull().default(9),
+  confirmationText: text("confirmation_text").notNull().default(""),
+  reminderText: text("reminder_text").notNull().default(""),
+  birthdayText: text("birthday_text").notNull().default(""),
 });
 
 /** Histórico de alterações dos cards (quem criou, moveu ou cancelou, e quando). */
@@ -243,6 +255,42 @@ export const cashEntries = pgTable(
   ],
 );
 
+export const messageKind = pgEnum("message_kind", ["confirmation", "reminder", "birthday"]);
+export const messageStatus = pgEnum("message_status", ["pending", "sent", "failed", "skipped"]);
+
+/** Fila e histórico de mensagens de WhatsApp. `dedupeKey` impede enviar a mesma mensagem duas vezes. */
+export const messages = pgTable(
+  "messages",
+  {
+    id: serial("id").primaryKey(),
+    kind: messageKind("kind").notNull(),
+    status: messageStatus("status").notNull().default("pending"),
+    clientId: integer("client_id")
+      .notNull()
+      .references(() => clients.id),
+    appointmentId: integer("appointment_id").references(() => appointments.id, { onDelete: "set null" }),
+    /** Número completo com o 55 do país, só dígitos. */
+    toPhone: text("to_phone").notNull(),
+    body: text("body").notNull(),
+    /** Variáveis na ordem usada pelos modelos aprovados no provedor. */
+    vars: jsonb("vars").notNull().default([]),
+    scheduledFor: timestamp("scheduled_for", { withTimezone: true }).notNull(),
+    sentAt: timestamp("sent_at", { withTimezone: true }),
+    provider: text("provider").notNull().default(""),
+    providerMessageId: text("provider_message_id").notNull().default(""),
+    error: text("error").notNull().default(""),
+    attempts: integer("attempts").notNull().default(0),
+    dedupeKey: text("dedupe_key").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("messages_dedupe_key").on(t.dedupeKey),
+    index("messages_queue_idx").on(t.status, t.scheduledFor),
+    index("messages_appt_idx").on(t.appointmentId),
+  ],
+);
+
+export type Message = typeof messages.$inferSelect;
 export type CashEntry = typeof cashEntries.$inferSelect;
 export type Employee = typeof employees.$inferSelect;
 export type Service = typeof services.$inferSelect;

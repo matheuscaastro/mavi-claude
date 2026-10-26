@@ -13,6 +13,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (can(user.accessRole, "clients.view")) items.push({ href: "/clientes", label: "Clientes", icon: "users" });
   if (can(user.accessRole, "employees.manage")) items.push({ href: "/funcionarios", label: "Funcionários", icon: "badge" });
   if (can(user.accessRole, "services.view")) items.push({ href: "/servicos", label: "Serviços", icon: "sparkles" });
+  if (can(user.accessRole, "settings.manage")) items.push({ href: "/mensagens", label: "Mensagens", icon: "chat" });
   if (can(user.accessRole, "settings.manage")) items.push({ href: "/configuracoes", label: "Configurações", icon: "sliders" });
 
   const initials = user.name
