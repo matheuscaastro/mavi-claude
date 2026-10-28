@@ -1,6 +1,6 @@
 import { and, asc, eq } from "drizzle-orm";
 import { db } from "@db/index";
-import { clients, employees, services } from "@db/schema";
+import { clients, employees, serviceCategories, services } from "@db/schema";
 import { requireUser } from "@/lib/auth";
 import { getSettings } from "@/lib/agenda";
 import { formatPhone } from "@/lib/phone";
@@ -14,7 +14,13 @@ export default async function NewAppointmentPage({ searchParams }: { searchParam
   await requireUser("agenda.edit");
   const sp = await searchParams;
   const [svc, staff, cl, settings] = await Promise.all([
-    db.select().from(services).where(eq(services.active, true)).orderBy(asc(services.category), asc(services.name)),
+    db
+      .select({ s: services })
+      .from(services)
+      .innerJoin(serviceCategories, eq(serviceCategories.id, services.categoryId))
+      .where(eq(services.active, true))
+      .orderBy(asc(serviceCategories.name), asc(services.name))
+      .then((r) => r.map((x) => x.s)),
     db
       .select({ id: employees.id, name: employees.name, color: employees.color })
       .from(employees)

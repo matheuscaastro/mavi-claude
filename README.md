@@ -93,3 +93,9 @@ Confirmação ao agendar/remarcar, lembrete antes do atendimento e mensagem de a
   (um Cron Job do Render, cron-job.org etc.). `CRON_SECRET` precisa de 16+ caracteres.
 - Lembretes e aniversários só saem entre 8h e 20h (horário do salão). Remarcar ou cancelar descarta o lembrete antigo.
 - `APP_URL` define o endereço usado no link de remarcar/cancelar (no Render, `RENDER_EXTERNAL_URL` é usado se faltar).
+
+## Categorias de serviço
+
+Todo serviço pertence a uma categoria cadastrada. Administradora e recepção cadastram, renomeiam e excluem
+categorias (só as sem serviços) pelo botão **Categorias** da tela de serviços. Serviços novos escolhem a categoria em uma lista.
+A migração 0005/0006 transformou as categorias em texto dos serviços existentes em categorias cadastradas.

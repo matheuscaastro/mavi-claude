@@ -6,7 +6,7 @@ import type { ServiceFormState } from "./actions";
 export type ServiceDefaults = {
   name: string;
   description: string;
-  category: string;
+  categoryId: string;
   durationMin: string;
   bufferMin: string;
   price: string;
@@ -14,11 +14,13 @@ export type ServiceDefaults = {
 };
 
 export default function ServiceForm({
+  categories,
   action,
   defaults,
   submitLabel,
   onDone,
 }: {
+  categories: { id: number; name: string }[];
   action: (state: ServiceFormState, formData: FormData) => Promise<ServiceFormState>;
   defaults: ServiceDefaults;
   submitLabel: string;
@@ -46,7 +48,16 @@ export default function ServiceForm({
       <div className="grid-2">
         <label className="field">
           <span className="label">Categoria</span>
-          <input name="category" defaultValue={defaults.category} required />
+          <select name="categoryId" defaultValue={defaults.categoryId} required>
+            <option value="" disabled>
+              Escolha a categoria
+            </option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
         </label>
         <label className="field">
           <span className="label">Preço (R$)</span>

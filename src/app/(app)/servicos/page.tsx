@@ -1,6 +1,6 @@
-import { asc } from "drizzle-orm";
+import { asc, count, eq } from "drizzle-orm";
 import { db } from "@db/index";
-import { services } from "@db/schema";
+import { serviceCategories, services } from "@db/schema";
 import { requireUser } from "@/lib/auth";
 import { can } from "@/lib/permissions";
 import { centsToInput, formatBRL } from "@/lib/money";
@@ -11,12 +11,25 @@ export const metadata = { title: "Serviços" };
 
 export default async function ServicesPage() {
   const user = await requireUser("services.view");
-  const rows = await db.select().from(services).orderBy(asc(services.category), asc(services.name));
-  const data: ServiceRow[] = rows.map((s) => ({
+  const [rows, cats] = await Promise.all([
+    db
+      .select({ s: services, categoryName: serviceCategories.name })
+      .from(services)
+      .innerJoin(serviceCategories, eq(serviceCategories.id, services.categoryId))
+      .orderBy(asc(serviceCategories.name), asc(services.name)),
+    db
+      .select({ id: serviceCategories.id, name: serviceCategories.name, total: count(services.id) })
+      .from(serviceCategories)
+      .leftJoin(services, eq(services.categoryId, serviceCategories.id))
+      .groupBy(serviceCategories.id)
+      .orderBy(asc(serviceCategories.name)),
+  ]);
+  const data: ServiceRow[] = rows.map(({ s, categoryName }) => ({
     id: s.id,
     name: s.name,
     description: s.description,
-    category: s.category,
+    categoryId: s.categoryId,
+    categoryName,
     durationMin: s.durationMin,
     durationLabel: formatDuration(s.durationMin),
     bufferMin: s.bufferMin,
@@ -25,5 +38,12 @@ export default async function ServicesPage() {
     publicVisible: s.publicVisible,
     active: s.active,
   }));
-  return <ServicesManager rows={data} canManage={can(user.accessRole, "services.manage")} />;
+  return (
+    <ServicesManager
+      rows={data}
+      categories={cats.map((c) => ({ id: c.id, name: c.name, total: c.total }))}
+      canManage={can(user.accessRole, "services.manage")}
+      canManageCategories={can(user.accessRole, "categories.manage")}
+    />
+  );
 }

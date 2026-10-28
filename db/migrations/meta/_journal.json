@@ -36,6 +36,20 @@
       "when": 1793025461953,
       "tag": "0004_whatsapp",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793212702939,
+      "tag": "0005_categorias_servico",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793212708336,
+      "tag": "0006_categoria_obrigatoria",
+      "breakpoints": true
     }
   ]
 }

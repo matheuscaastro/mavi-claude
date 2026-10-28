@@ -1,6 +1,6 @@
 import { and, asc, eq } from "drizzle-orm";
 import { db } from "@db/index";
-import { employeeServices, employees, services } from "@db/schema";
+import { employeeServices, employees, serviceCategories, services } from "@db/schema";
 import { getSettings } from "@/lib/agenda";
 import { addDays, todayLocal } from "@/lib/time";
 import BookingFlow from "./BookingFlow";
@@ -9,7 +9,13 @@ export const dynamic = "force-dynamic";
 
 export default async function PublicBookingPage() {
   const [svc, staff, links, settings] = await Promise.all([
-    db.select().from(services).where(and(eq(services.active, true), eq(services.publicVisible, true))).orderBy(asc(services.category), asc(services.name)),
+    db
+      .select({ s: services })
+      .from(services)
+      .innerJoin(serviceCategories, eq(serviceCategories.id, services.categoryId))
+      .where(and(eq(services.active, true), eq(services.publicVisible, true)))
+      .orderBy(asc(serviceCategories.name), asc(services.name))
+      .then((r) => r.map((x) => x.s)),
     db
       .select({ id: employees.id, name: employees.name, jobTitle: employees.jobTitle })
       .from(employees)

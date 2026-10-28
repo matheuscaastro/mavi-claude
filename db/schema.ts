@@ -67,11 +67,24 @@ export const employeeHours = pgTable(
   (t) => [primaryKey({ columns: [t.employeeId, t.weekday] })],
 );
 
+/** Categorias dos serviços. Todo serviço pertence a uma categoria existente. */
+export const serviceCategories = pgTable(
+  "service_categories",
+  {
+    id: serial("id").primaryKey(),
+    name: text("name").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("service_categories_name_key").on(sql`lower(${t.name})`)],
+);
+
 export const services = pgTable("services", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description").notNull().default(""),
-  category: text("category").notNull().default("Podologia"),
+  categoryId: integer("category_id")
+    .notNull()
+    .references(() => serviceCategories.id),
   durationMin: integer("duration_min").notNull(),
   priceCents: integer("price_cents").notNull(),
   /** Intervalo de preparo depois do serviço (não aparece para a cliente). */
@@ -293,6 +306,7 @@ export const messages = pgTable(
 export type Message = typeof messages.$inferSelect;
 export type CashEntry = typeof cashEntries.$inferSelect;
 export type Employee = typeof employees.$inferSelect;
+export type ServiceCategory = typeof serviceCategories.$inferSelect;
 export type Service = typeof services.$inferSelect;
 export type Client = typeof clients.$inferSelect;
 export type Appointment = typeof appointments.$inferSelect;

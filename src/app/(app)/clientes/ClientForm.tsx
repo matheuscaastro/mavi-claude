@@ -39,12 +39,12 @@ export default function ClientForm({
       ) : null}
       {state.ok && !onDone ? <div className="notice ok">Dados salvos.</div> : null}
       <label className="field">
-        <span className="label">Nome completo</span>
+        <span className="label">Nome completo *</span>
         <input name="name" defaultValue={defaults.name} required />
       </label>
       <div className="grid-2">
         <label className="field">
-          <span className="label">Telefone (WhatsApp)</span>
+          <span className="label">Telefone (WhatsApp) *</span>
           <MaskedInput kind="phone" name="phone" defaultValue={defaults.phone} required />
         </label>
         <label className="field">
@@ -68,6 +68,9 @@ export default function ClientForm({
         <input type="checkbox" name="whatsappOptIn" defaultChecked={defaults.whatsappOptIn} />
         Autoriza receber mensagens por WhatsApp (confirmação, lembrete e aniversário)
       </label>
+      <p className="muted small" style={{ margin: 0 }}>
+        * Campos obrigatórios
+      </p>
       <div className="row">
         <button className="btn" type="submit" disabled={pending}>
           {pending ? "Salvando…" : submitLabel}

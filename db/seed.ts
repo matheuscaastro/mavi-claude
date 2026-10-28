@@ -40,16 +40,22 @@ async function main() {
     .returning();
   const byName = Object.fromEntries(staff.map((e) => [e.name, e]));
 
+  const catRows = await db
+    .insert(schema.serviceCategories)
+    .values([{ name: "Podologia" }, { name: "Estética dos pés" }, { name: "Bem-estar" }])
+    .returning();
+  const cat = Object.fromEntries(catRows.map((c) => [c.name, c.id]));
+
   const svcRows = await db
     .insert(schema.services)
     .values([
-      { name: "Podologia clínica", description: "Avaliação e cuidado completo dos pés.", category: "Podologia", durationMin: 60, priceCents: 12000, bufferMin: 10 },
-      { name: "Pedicure terapêutica", description: "Unhas, cutículas e pele com técnica terapêutica.", category: "Podologia", durationMin: 45, priceCents: 9000, bufferMin: 10 },
-      { name: "Unha encravada", description: "Tratamento da unha encravada.", category: "Podologia", durationMin: 45, priceCents: 15000, bufferMin: 10 },
-      { name: "Tratamento fúngico", description: "Cuidado das unhas com micose.", category: "Podologia", durationMin: 45, priceCents: 14000, bufferMin: 10 },
-      { name: "Remoção de verruga plantar", description: "Remoção de verruga na sola do pé.", category: "Podologia", durationMin: 40, priceCents: 13000, bufferMin: 10 },
-      { name: "Hidratação profunda", description: "Hidratação intensiva para pele ressecada.", category: "Estética dos pés", durationMin: 30, priceCents: 6000, bufferMin: 5 },
-      { name: "Reflexologia podal", description: "Massagem relaxante nos pés.", category: "Bem-estar", durationMin: 60, priceCents: 11000, bufferMin: 5 },
+      { name: "Podologia clínica", description: "Avaliação e cuidado completo dos pés.", categoryId: cat["Podologia"], durationMin: 60, priceCents: 12000, bufferMin: 10 },
+      { name: "Pedicure terapêutica", description: "Unhas, cutículas e pele com técnica terapêutica.", categoryId: cat["Podologia"], durationMin: 45, priceCents: 9000, bufferMin: 10 },
+      { name: "Unha encravada", description: "Tratamento da unha encravada.", categoryId: cat["Podologia"], durationMin: 45, priceCents: 15000, bufferMin: 10 },
+      { name: "Tratamento fúngico", description: "Cuidado das unhas com micose.", categoryId: cat["Podologia"], durationMin: 45, priceCents: 14000, bufferMin: 10 },
+      { name: "Remoção de verruga plantar", description: "Remoção de verruga na sola do pé.", categoryId: cat["Podologia"], durationMin: 40, priceCents: 13000, bufferMin: 10 },
+      { name: "Hidratação profunda", description: "Hidratação intensiva para pele ressecada.", categoryId: cat["Estética dos pés"], durationMin: 30, priceCents: 6000, bufferMin: 5 },
+      { name: "Reflexologia podal", description: "Massagem relaxante nos pés.", categoryId: cat["Bem-estar"], durationMin: 60, priceCents: 11000, bufferMin: 5 },
     ])
     .returning();
   const svc = Object.fromEntries(svcRows.map((s) => [s.name, s]));

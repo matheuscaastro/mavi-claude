@@ -13,6 +13,7 @@ export type Permission =
   | "clients.edit"
   | "services.view"
   | "services.manage"
+  | "categories.manage" // cadastrar categorias de serviço (administradora e recepção)
   | "employees.manage"
   | "settings.manage"
   | "cash.view" // fluxo de caixa completo (fase seguinte)
@@ -27,12 +28,13 @@ const MATRIX: Record<AccessRole, Permission[]> = {
     "clients.edit",
     "services.view",
     "services.manage",
+    "categories.manage",
     "employees.manage",
     "settings.manage",
     "cash.view",
     "cash.register",
   ],
-  reception: ["agenda.viewAll", "agenda.edit", "clients.view", "clients.edit", "services.view", "cash.register"],
+  reception: ["agenda.viewAll", "agenda.edit", "clients.view", "clients.edit", "services.view", "categories.manage", "cash.register"],
   professional: ["agenda.updateOwnStatus", "clients.view", "services.view"],
 };
 
