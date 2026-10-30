@@ -1,13 +1,15 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, METHOD_LABEL, METHODS } from "@/lib/cash";
+import { METHOD_LABEL, METHODS } from "@/lib/cash";
 import { addEntry, type FormState } from "./actions";
 
-export default function EntryForm({ today }: { today: string }) {
+export type CashCategory = { id: number; kind: "income" | "expense"; name: string };
+
+export default function EntryForm({ today, categories, onManageCategories }: { today: string; categories: CashCategory[]; onManageCategories: () => void }) {
   const [state, action, pending] = useActionState<FormState, FormData>(addEntry, {});
   const [kind, setKind] = useState<"expense" | "income">("expense");
-  const cats = kind === "expense" ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
+  const cats = categories.filter((c) => c.kind === kind).map((c) => c.name);
   return (
     <form action={action} className="stack">
       {state.error ? (
@@ -37,11 +39,17 @@ export default function EntryForm({ today }: { today: string }) {
         </label>
         <label className="field">
           <span className="label">Categoria</span>
-          <select name="category" key={kind} required>
+          <select name="category" key={kind} required defaultValue="">
+            <option value="" disabled>
+              Escolha a categoria
+            </option>
             {cats.map((c) => (
               <option key={c}>{c}</option>
             ))}
           </select>
+          <button type="button" className="link-btn small" onClick={onManageCategories}>
+            Gerenciar categorias
+          </button>
         </label>
         <label className="field">
           <span className="label">Forma</span>

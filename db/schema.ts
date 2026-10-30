@@ -28,7 +28,7 @@ export const appointmentStatus = pgEnum("appointment_status", [
   "no_show", // Faltou
 ]);
 
-export const paymentMethod = pgEnum("payment_method", ["cash", "pix", "debit", "credit", "other"]);
+export const paymentMethod = pgEnum("payment_method", ["cash", "pix", "debit", "credit", "barter", "other"]);
 export const cashKind = pgEnum("cash_kind", ["income", "expense"]);
 
 export const appointmentOrigin = pgEnum("appointment_origin", ["counter", "online"]);
@@ -240,6 +240,18 @@ export const appointmentEvents = pgTable(
     at: timestamp("at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("appointment_events_appt_idx").on(t.appointmentId)],
+);
+
+/** Categorias dos lançamentos avulsos do caixa, separadas por tipo. O lançamento guarda o nome (texto), então excluir uma categoria não mexe no histórico. */
+export const cashCategories = pgTable(
+  "cash_categories",
+  {
+    id: serial("id").primaryKey(),
+    kind: cashKind("kind").notNull(),
+    name: text("name").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("cash_categories_kind_name_key").on(t.kind, sql`lower(${t.name})`)],
 );
 
 /** Lançamentos do caixa. Pagamento de atendimento tem appointmentId; o resto é receita/despesa avulsa. */

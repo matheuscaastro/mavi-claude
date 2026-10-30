@@ -5,9 +5,10 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@db/index";
-import { appointments, cashEntries } from "@db/schema";
+import { appointments, cashCategories, cashEntries } from "@db/schema";
 import { requireUser } from "@/lib/auth";
 import { METHODS } from "@/lib/cash";
+import { isUniqueViolation } from "@/lib/db-errors";
 import { parseBRL } from "@/lib/money";
 import { isValidDate, todayLocal } from "@/lib/time";
 
@@ -72,6 +73,11 @@ export async function addEntry(_p: FormState, formData: FormData): Promise<FormS
   if (!method.success) return { error: method.error.issues[0].message };
   const cents = parseBRL(String(formData.get("amount") ?? ""));
   if (cents === null || cents <= 0) return { error: "Informe um valor válido." };
+  const [known] = await db
+    .select({ id: cashCategories.id })
+    .from(cashCategories)
+    .where(and(eq(cashCategories.kind, parsed.data.kind), eq(cashCategories.name, parsed.data.category)));
+  if (!known) return { error: "Escolha uma categoria cadastrada." };
 
   await db.insert(cashEntries).values({
     ...parsed.data,
@@ -93,4 +99,32 @@ export async function voidEntry(id: number) {
     .where(and(eq(cashEntries.id, id), isNull(cashEntries.voidedAt)));
   revalidatePath("/caixa");
   redirect("/caixa");
+}
+
+export type CashCategoryState = { error?: string; ok?: boolean };
+
+const categoryName = z.string().trim().min(2, "O nome precisa ter ao menos 2 letras.").max(40, "O nome pode ter no máximo 40 letras.");
+
+export async function createCashCategory(_p: CashCategoryState, formData: FormData): Promise<CashCategoryState> {
+  await requireUser("cash.view");
+  const kind = z.enum(["income", "expense"]).safeParse(formData.get("kind"));
+  if (!kind.success) return { error: "Escolha o tipo." };
+  const name = categoryName.safeParse(formData.get("name") ?? "");
+  if (!name.success) return { error: name.error.issues[0]?.message ?? "Nome inválido." };
+  try {
+    await db.insert(cashCategories).values({ kind: kind.data, name: name.data });
+  } catch (e) {
+    if (isUniqueViolation(e)) return { error: "Já existe uma categoria com esse nome." };
+    throw e;
+  }
+  revalidatePath("/caixa");
+  return { ok: true };
+}
+
+/** Lançamentos antigos guardam o nome em texto, então excluir a categoria não altera o histórico. */
+export async function deleteCashCategory(id: number): Promise<CashCategoryState> {
+  await requireUser("cash.view");
+  await db.delete(cashCategories).where(eq(cashCategories.id, id));
+  revalidatePath("/caixa");
+  return { ok: true };
 }

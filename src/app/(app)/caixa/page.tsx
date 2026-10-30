@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { and, asc, desc, eq, gte, lte } from "drizzle-orm";
 import { db } from "@db/index";
-import { appointments, cashEntries, clients } from "@db/schema";
+import { appointments, cashCategories, cashEntries, clients } from "@db/schema";
 import { requireUser } from "@/lib/auth";
 import { METHOD_LABEL, METHODS, resolvePeriod, summarize, type PeriodKey } from "@/lib/cash";
 import { formatBRL } from "@/lib/money";
 import { formatDateShort, isValidDate, todayLocal } from "@/lib/time";
-import EntryForm from "./EntryForm";
+import EntryPanel from "./EntryPanel";
 import { voidEntry } from "./actions";
 
 export const metadata = { title: "Caixa" };
@@ -34,6 +34,7 @@ export default async function CashPage({ searchParams }: { searchParams: Promise
     .where(and(gte(cashEntries.occurredOn, range.from), lte(cashEntries.occurredOn, range.to)))
     .orderBy(desc(cashEntries.occurredOn), desc(cashEntries.id));
 
+  const categories = await db.select().from(cashCategories).orderBy(asc(cashCategories.name));
   const sum = summarize(rows.map((r) => r.e));
 
   return (
@@ -154,7 +155,7 @@ export default async function CashPage({ searchParams }: { searchParams: Promise
           </div>
           <div className="card">
             <div className="section-title">Novo lançamento</div>
-            <EntryForm today={today} />
+            <EntryPanel today={today} categories={categories.map((c) => ({ id: c.id, kind: c.kind, name: c.name }))} />
           </div>
         </div>
       </div>

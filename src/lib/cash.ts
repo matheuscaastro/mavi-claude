@@ -5,13 +5,15 @@ export const METHOD_LABEL = {
   pix: "Pix",
   debit: "Débito",
   credit: "Crédito",
+  barter: "Permuta",
   other: "Outro",
 } as const;
 export type Method = keyof typeof METHOD_LABEL;
 export const METHODS = Object.keys(METHOD_LABEL) as Method[];
 
-export const EXPENSE_CATEGORIES = ["Aluguel", "Materiais e insumos", "Salários", "Impostos e taxas", "Água, luz e internet", "Marketing", "Outros"];
-export const INCOME_CATEGORIES = ["Venda de produtos", "Outros"];
+/** Categorias iniciais (usadas pela migração e pelo seed). Depois disso, quem manda é a tabela cash_categories. */
+export const DEFAULT_EXPENSE_CATEGORIES = ["Aluguel", "Materiais e insumos", "Salários", "Impostos e taxas", "Água, luz e internet", "Marketing", "Outros"];
+export const DEFAULT_INCOME_CATEGORIES = ["Venda de produtos", "Outros"];
 
 export type PeriodKey = "hoje" | "semana" | "mes" | "personalizado";
 
