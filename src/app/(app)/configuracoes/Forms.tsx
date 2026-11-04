@@ -1,5 +1,6 @@
 "use client";
 
+import Select from "@/components/Select";
 import { useActionState } from "react";
 import { DEFAULT_TEXTS, VARIABLES } from "@/lib/messages/templates";
 import { addException, saveHours, saveMessaging, saveRules, type FormState } from "./actions";
@@ -67,16 +68,10 @@ export function RulesForm({
           <span className="label">Prazo para cancelar/remarcar online (horas antes)</span>
           <input type="number" name="cancelDeadlineHours" min={0} defaultValue={settings.cancelDeadlineHours} />
         </label>
-        <label className="field">
+        <div className="field">
           <span className="label">Intervalo entre horários oferecidos</span>
-          <select name="slotStepMin" defaultValue={settings.slotStepMin}>
-            {[5, 10, 15, 20, 30, 60].map((m) => (
-              <option key={m} value={m}>
-                {m} min
-              </option>
-            ))}
-          </select>
-        </label>
+          <Select name="slotStepMin" defaultValue={String(settings.slotStepMin)} options={[5, 10, 15, 20, 30, 60].map((m) => ({ value: String(m), label: `${m} min` }))} aria-label="Intervalo entre horários" />
+        </div>
       </div>
       <label className="check">
         <input type="checkbox" name="allowAnyProfessional" defaultChecked={settings.allowAnyProfessional} />
@@ -181,16 +176,10 @@ export function MessagingForm({
         <input type="checkbox" name="birthdayEnabled" defaultChecked={settings.birthdayEnabled} /> Mensagem de aniversário
       </label>
       <div className="grid-2">
-        <label className="field">
+        <div className="field">
           <span className="label">Hora de envio do aniversário</span>
-          <select name="birthdayHour" defaultValue={settings.birthdayHour}>
-            {Array.from({ length: 12 }, (_, i) => i + 8).map((h) => (
-              <option key={h} value={h}>
-                {String(h).padStart(2, "0")}:00
-              </option>
-            ))}
-          </select>
-        </label>
+          <Select name="birthdayHour" defaultValue={String(settings.birthdayHour)} options={Array.from({ length: 12 }, (_, i) => i + 8).map((h) => ({ value: String(h), label: `${String(h).padStart(2, "0")}:00` }))} aria-label="Hora de envio do aniversário" />
+        </div>
       </div>
       <label className="field">
         <span className="label">Texto do aniversário</span>

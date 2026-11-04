@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import Select from "@/components/Select";
 import { METHOD_LABEL, METHODS } from "@/lib/cash";
 import { addEntry, type FormState } from "./actions";
 
@@ -37,30 +38,17 @@ export default function EntryForm({ today, categories, onManageCategories }: { t
           <span className="label">Data</span>
           <input type="date" name="date" defaultValue={today} required />
         </label>
-        <label className="field">
+        <div className="field">
           <span className="label">Categoria</span>
-          <select name="category" key={kind} required defaultValue="">
-            <option value="" disabled>
-              Escolha a categoria
-            </option>
-            {cats.map((c) => (
-              <option key={c}>{c}</option>
-            ))}
-          </select>
+          <Select key={kind} name="category" required placeholder="Escolha a categoria" options={cats.map((c) => ({ value: c, label: c }))} aria-label="Categoria" />
           <button type="button" className="link-btn small" onClick={onManageCategories}>
             Gerenciar categorias
           </button>
-        </label>
-        <label className="field">
+        </div>
+        <div className="field">
           <span className="label">Forma</span>
-          <select name="method" defaultValue="pix">
-            {METHODS.map((m) => (
-              <option key={m} value={m}>
-                {METHOD_LABEL[m]}
-              </option>
-            ))}
-          </select>
-        </label>
+          <Select name="method" defaultValue="pix" options={METHODS.map((m) => ({ value: m, label: METHOD_LABEL[m] }))} aria-label="Forma de pagamento" />
+        </div>
       </div>
       <label className="field">
         <span className="label">Descrição</span>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import Select from "@/components/Select";
 import { createBlock, type FormState } from "./actions";
 
 export default function BlockForm({ date, staff }: { date: string; staff: { id: number; name: string }[] }) {
@@ -13,16 +14,10 @@ export default function BlockForm({ date, staff }: { date: string; staff: { id: 
         </div>
       ) : null}
       <div className="grid-2">
-        <label className="field">
+        <div className="field">
           <span className="label">Profissional</span>
-          <select name="employeeId" required>
-            {staff.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
-        </label>
+          <Select name="employeeId" required defaultValue={String(staff[0]?.id ?? "")} options={staff.map((s) => ({ value: String(s.id), label: s.name }))} aria-label="Profissional" />
+        </div>
         <label className="field">
           <span className="label">Data</span>
           <input type="date" name="date" defaultValue={date} required />

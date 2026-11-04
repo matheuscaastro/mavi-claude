@@ -1,5 +1,6 @@
 "use client";
 
+import Select from "@/components/Select";
 import { useActionState, useEffect } from "react";
 import MaskedInput from "@/components/MaskedInput";
 import type { EmployeeFormState } from "./actions";
@@ -60,14 +61,10 @@ export default function EmployeeForm({
           <span className="label">E-mail (usado no login)</span>
           <input type="email" name="email" defaultValue={defaults.email} required />
         </label>
-        <label className="field">
+        <div className="field">
           <span className="label">Perfil de acesso</span>
-          <select name="accessRole" defaultValue={defaults.accessRole}>
-            <option value="professional">Profissional</option>
-            <option value="reception">Recepção</option>
-            <option value="admin">Administradora</option>
-          </select>
-        </label>
+          <Select name="accessRole" defaultValue={defaults.accessRole} options={[{ value: "professional", label: "Profissional" }, { value: "reception", label: "Recepção" }, { value: "admin", label: "Administradora" }]} aria-label="Perfil de acesso" />
+        </div>
         <label className="field">
           <span className="label">{isNew ? "Senha inicial" : "Nova senha (deixe vazio para manter)"}</span>
           <input type="password" name="password" autoComplete="new-password" minLength={8} required={isNew} />

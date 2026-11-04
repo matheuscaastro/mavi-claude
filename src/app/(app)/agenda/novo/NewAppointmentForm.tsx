@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Select from "@/components/Select";
 import { useActionState, useEffect, useMemo, useState } from "react";
 import { createAppointment, type FormState } from "../actions";
 
@@ -21,7 +22,6 @@ export default function NewAppointmentForm(props: {
   initialDate: string;
 }) {
   const [state, action, pending] = useActionState<FormState, FormData>(createAppointment, {});
-  const [filter, setFilter] = useState("");
   const [clientId, setClientId] = useState<number | "">(props.initialClientId ?? "");
   const [serviceIds, setServiceIds] = useState<number[]>([]);
   const [who, setWho] = useState<string>(props.allowAny ? "any" : String(props.staff[0]?.id ?? ""));
@@ -30,10 +30,6 @@ export default function NewAppointmentForm(props: {
   const [loading, setLoading] = useState(false);
   const [slot, setSlot] = useState<Slot | null>(null);
 
-  const visibleClients = useMemo(() => {
-    const f = filter.trim().toLowerCase();
-    return f ? props.clients.filter((c) => c.label.toLowerCase().includes(f)) : props.clients;
-  }, [filter, props.clients]);
 
   const chosen = props.services.filter((s) => serviceIds.includes(s.id));
   const totalMin = chosen.reduce((a, s) => a + s.durationMin, 0);
@@ -68,15 +64,7 @@ export default function NewAppointmentForm(props: {
 
         <div className="card stack">
           <div className="section-title">1. Cliente</div>
-          <input placeholder="Filtrar por nome ou telefone" value={filter} onChange={(e) => setFilter(e.target.value)} />
-          <select name="clientId" value={clientId} onChange={(e) => setClientId(e.target.value ? Number(e.target.value) : "")} required size={1}>
-            <option value="">Escolha a cliente…</option>
-            {visibleClients.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.label}
-              </option>
-            ))}
-          </select>
+          <Select name="clientId" value={String(clientId)} onChange={(v) => setClientId(v ? Number(v) : "")} required placeholder="Buscar cliente por nome ou telefone…" searchPlaceholder="Nome ou telefone…" options={props.clients.map((c) => ({ value: String(c.id), label: c.label }))} aria-label="Cliente" />
           <Link href="/clientes?novo=1" className="small">
             Cliente nova? Cadastre primeiro.
           </Link>

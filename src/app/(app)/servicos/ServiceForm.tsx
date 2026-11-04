@@ -1,5 +1,6 @@
 "use client";
 
+import Select from "@/components/Select";
 import { useActionState, useEffect } from "react";
 import type { ServiceFormState } from "./actions";
 
@@ -46,19 +47,10 @@ export default function ServiceForm({
         <textarea name="description" rows={2} defaultValue={defaults.description} />
       </label>
       <div className="grid-2">
-        <label className="field">
+        <div className="field">
           <span className="label">Categoria</span>
-          <select name="categoryId" defaultValue={defaults.categoryId} required>
-            <option value="" disabled>
-              Escolha a categoria
-            </option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </label>
+          <Select name="categoryId" required defaultValue={String(defaults.categoryId ?? "")} placeholder="Escolha a categoria" options={categories.map((c) => ({ value: String(c.id), label: c.name }))} aria-label="Categoria" />
+        </div>
         <label className="field">
           <span className="label">Preço (R$)</span>
           <input name="price" inputMode="decimal" defaultValue={defaults.price} placeholder="80,00" required />

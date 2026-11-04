@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import Select from "@/components/Select";
 import { METHOD_LABEL, METHODS } from "@/lib/cash";
 import { registerPayment, type FormState } from "../../caixa/actions";
 
@@ -18,16 +19,10 @@ export default function PaymentForm({ appointmentId, dueInput }: { appointmentId
           <span className="label">Valor recebido (R$)</span>
           <input name="amount" inputMode="decimal" defaultValue={dueInput} required />
         </label>
-        <label className="field">
+        <div className="field">
           <span className="label">Forma de pagamento</span>
-          <select name="method" defaultValue="pix">
-            {METHODS.map((m) => (
-              <option key={m} value={m}>
-                {METHOD_LABEL[m]}
-              </option>
-            ))}
-          </select>
-        </label>
+          <Select name="method" defaultValue="pix" options={METHODS.map((m) => ({ value: m, label: METHOD_LABEL[m] }))} aria-label="Forma de pagamento" />
+        </div>
       </div>
       <div className="row">
         <button className="btn" type="submit" disabled={pending}>
