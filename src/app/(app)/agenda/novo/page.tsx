@@ -39,7 +39,7 @@ export default async function NewAppointmentPage({ searchParams }: { searchParam
       <NewAppointmentForm
         services={svc.map((s) => ({ id: s.id, name: s.name, durationMin: s.durationMin, priceCents: s.priceCents }))}
         staff={staff}
-        clients={cl.map((c) => ({ id: c.id, label: `${c.name} · ${formatPhone(c.phone)}` }))}
+        clients={cl.map((c) => ({ id: c.id, name: c.name, phone: c.phone, phoneLabel: formatPhone(c.phone) }))}
         allowAny={settings.allowAnyProfessional}
         initialClientId={Number.isInteger(clientId) && cl.some((c) => c.id === clientId) ? clientId : null}
         initialDate={sp.data && isValidDate(sp.data) ? sp.data : todayLocal()}

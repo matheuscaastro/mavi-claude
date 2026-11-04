@@ -16,7 +16,7 @@ const dur = (m: number) => (m >= 60 ? `${Math.floor(m / 60)}h${m % 60 ? String(m
 export default function NewAppointmentForm(props: {
   services: Svc[];
   staff: Staff[];
-  clients: { id: number; label: string }[];
+  clients: { id: number; name: string; phone: string; phoneLabel: string }[];
   allowAny: boolean;
   initialClientId: number | null;
   initialDate: string;
@@ -64,7 +64,7 @@ export default function NewAppointmentForm(props: {
 
         <div className="card stack">
           <div className="section-title">1. Cliente</div>
-          <Select name="clientId" value={String(clientId)} onChange={(v) => setClientId(v ? Number(v) : "")} required placeholder="Buscar cliente por nome ou telefone…" searchPlaceholder="Nome ou telefone…" options={props.clients.map((c) => ({ value: String(c.id), label: c.label }))} aria-label="Cliente" />
+          <Select name="clientId" value={String(clientId)} onChange={(v) => setClientId(v ? Number(v) : "")} required placeholder="Buscar cliente por nome ou telefone…" searchPlaceholder="Nome ou telefone…" options={props.clients.map((c) => ({ value: String(c.id), label: c.name, hint: c.phoneLabel, keywords: c.phone }))} aria-label="Cliente" />
           <Link href="/clientes?novo=1" className="small">
             Cliente nova? Cadastre primeiro.
           </Link>

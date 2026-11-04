@@ -2250,3 +2250,7 @@ a:focus-visible {
   font-size: 13px;
   color: #7c8c87;
 }
+
+.select-value-hint {
+  color: var(--muted);
+}

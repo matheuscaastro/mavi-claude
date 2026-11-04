@@ -11,7 +11,12 @@ import {
   useState,
 } from "react";
 
-export type SelectOption = { value: string; label: string; hint?: string };
+export type SelectOption = {
+  value: string;
+  label: string;
+  hint?: string;
+  /** Termos extras para a busca (ex.: telefone sem formatação). */ keywords?: string;
+};
 
 type Props = {
   name?: string;
@@ -70,13 +75,19 @@ export default function Select({
 
   const shown = useMemo(() => {
     const q = norm(query);
-    return q
-      ? options.filter(
-          (o) =>
-            norm(o.label).includes(q) ||
-            (o.hint ? norm(o.hint).includes(q) : false),
-        )
-      : options;
+    if (!q) return options;
+    const digits = query.replace(/\D/g, "");
+    return options.filter((o) => {
+      const text = norm(`${o.label} ${o.hint ?? ""} ${o.keywords ?? ""}`);
+      if (text.includes(q)) return true;
+      // Telefone: acha mesmo digitando sem parênteses, espaço ou traço.
+      return (
+        digits.length >= 2 &&
+        `${o.hint ?? ""} ${o.keywords ?? ""}`
+          .replace(/\D/g, "")
+          .includes(digits)
+      );
+    });
   }, [options, query]);
   const selected = options.find((o) => o.value === current);
 
