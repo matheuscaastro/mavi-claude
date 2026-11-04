@@ -33,7 +33,7 @@ export default async function NewAppointmentPage({ searchParams }: { searchParam
 
   return (
     <>
-      <h1 className="page-title" style={{ marginBottom: 16 }}>
+      <h1 className="page-title" data-eyebrow="Agenda" style={{ marginBottom: 16 }}>
         Novo agendamento
       </h1>
       <NewAppointmentForm

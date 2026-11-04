@@ -41,7 +41,7 @@ export default async function CashPage({ searchParams }: { searchParams: Promise
     <>
       <div className="topbar">
         <div>
-          <h1 className="page-title">Caixa</h1>
+          <h1 className="page-title" data-eyebrow="Financeiro">Caixa</h1>
           <div className="muted">
             {range.from === range.to ? formatDateShort(range.from) : `${formatDateShort(range.from)} a ${formatDateShort(range.to)}`}
           </div>

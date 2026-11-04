@@ -76,7 +76,7 @@ export default async function AppointmentPage({ params }: { params: Promise<{ id
     <>
       <div className="topbar">
         <div>
-          <h1 className="page-title">{client.name}</h1>
+          <h1 className="page-title" data-eyebrow="Atendimento">{client.name}</h1>
           <div className="muted">
             <span className={`chip status status-${a.status}`}>{STATUS_LABEL[a.status]}</span> · {formatPhone(client.phone)}
           </div>

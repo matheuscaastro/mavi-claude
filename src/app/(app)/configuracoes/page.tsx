@@ -19,7 +19,7 @@ export default async function SettingsPage() {
   ]);
   return (
     <>
-      <h1 className="page-title" style={{ marginBottom: 16 }}>
+      <h1 className="page-title" data-eyebrow="Sistema" style={{ marginBottom: 16 }}>
         Configurações
       </h1>
       <div className="split">

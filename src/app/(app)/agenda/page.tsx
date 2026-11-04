@@ -76,12 +76,24 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
   const showNow = nowMin !== null && nowMin >= startH * 60 && nowMin <= endH * 60;
   const dayList = myBlocks.filter((b) => canEdit);
 
+  // Resumo do dia: números rápidos para a recepção bater o olho.
+  const nameOf = new Map(staff.map((s) => [s.id, s.name]));
+  const upcoming = [...mine].sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime()).filter((a) => (date === today ? a.startsAt.getTime() > Date.now() && ["scheduled", "confirmed"].includes(a.status) : true));
+  const next = upcoming[0];
+  const stats = [
+    { k: "Atendimentos", v: String(mine.length), h: `${staff.length} ${staff.length === 1 ? "profissional" : "profissionais"}` },
+    { k: "A confirmar", v: String(mine.filter((a) => a.status === "scheduled").length), h: "ainda sem confirmação" },
+    { k: "Concluídos", v: String(mine.filter((a) => a.status === "completed").length), h: `${mine.filter((a) => a.status === "in_progress").length} em atendimento agora` },
+    { k: date === today ? "Próximo" : "Primeiro do dia", v: next ? localTime(next.startsAt) : "—", h: next ? `${next.clientName} · ${nameOf.get(next.employeeId) ?? ""}` : "nada pendente" },
+  ];
+
   return (
     <>
       <div className="topbar">
         <div>
-          <h1 className="page-title">Agenda</h1>
-          <div className="muted">{capitalize(formatDateLong(date))}</div>
+          <h1 className="page-title" data-eyebrow={capitalize(formatDateLong(date))}>
+            Agenda
+          </h1>
         </div>
         <div className="row" style={{ alignItems: "center" }}>
           <Link className="icon-btn" href={`/agenda?data=${addDays(date, -1)}`} aria-label="Dia anterior">
@@ -109,6 +121,16 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
 
       {sp.erro === "sem-permissao" ? <div className="notice error">Você não tem permissão para essa área.</div> : null}
       {!window ? <div className="notice">O salão está fechado neste dia (pelos horários configurados).</div> : null}
+
+      <div className="stats">
+        {stats.map((t) => (
+          <div key={t.k} className="stat">
+            <span className="k">{t.k}</span>
+            <span className="v">{t.v}</span>
+            <span className="h">{t.h}</span>
+          </div>
+        ))}
+      </div>
 
       <div className="legend" style={{ marginBottom: 12 }}>
         {(Object.keys(STATUS_LABEL) as (keyof typeof STATUS_LABEL)[])

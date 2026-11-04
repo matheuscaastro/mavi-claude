@@ -34,7 +34,7 @@ export default async function MessagesPage() {
 
   return (
     <>
-      <h1 className="page-title" style={{ marginBottom: 16 }}>
+      <h1 className="page-title" data-eyebrow="WhatsApp" style={{ marginBottom: 16 }}>
         Mensagens
       </h1>
       <div className="stack">

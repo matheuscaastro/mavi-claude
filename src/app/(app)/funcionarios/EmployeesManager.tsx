@@ -20,7 +20,7 @@ export default function EmployeesManager({ rows, services }: { rows: EmployeeRow
   return (
     <>
       <div className="topbar">
-        <h1 className="page-title">Funcionários</h1>
+        <h1 className="page-title" data-eyebrow="Cadastros">Funcionários</h1>
         <button type="button" className="btn" onClick={() => setEditing("new")}>
           <Icon name="plus" /> Nova funcionária
         </button>

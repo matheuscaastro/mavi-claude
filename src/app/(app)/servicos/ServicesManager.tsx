@@ -42,7 +42,7 @@ export default function ServicesManager({
   return (
     <>
       <div className="topbar">
-        <h1 className="page-title">Serviços</h1>
+        <h1 className="page-title" data-eyebrow="Cadastros">Serviços</h1>
         <div className="row" style={{ gap: 10 }}>
           {canManageCategories ? (
             <button type="button" className="btn secondary" onClick={() => setShowCategories(true)}>

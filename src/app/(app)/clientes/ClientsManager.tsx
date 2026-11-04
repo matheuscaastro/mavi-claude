@@ -43,7 +43,7 @@ export default function ClientsManager({ rows, canEdit, autoOpenNew, children }:
   return (
     <>
       <div className="topbar">
-        <h1 className="page-title">Clientes</h1>
+        <h1 className="page-title" data-eyebrow="Cadastros">Clientes</h1>
         {canEdit ? (
           <button type="button" className="btn" onClick={() => setEditing("new")}>
             <Icon name="plus" /> Nova cliente

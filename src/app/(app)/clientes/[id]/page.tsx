@@ -47,7 +47,7 @@ export default async function ClientPage({
     <>
       <div className="topbar">
         <div>
-          <h1 className="page-title">{client.name}</h1>
+          <h1 className="page-title" data-eyebrow="Cadastros">{client.name}</h1>
           <div className="muted">
             {formatPhone(client.phone)} {!client.active ? <span className="chip gray">Inativa</span> : null}
           </div>
