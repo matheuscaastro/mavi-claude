@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useState, useTransition } from "react";
 import Modal from "@/components/Modal";
 import { Icon } from "@/components/icons";
 import CategoriesManager, { type CategoryRow } from "./CategoriesManager";
@@ -22,6 +22,14 @@ export type ServiceRow = {
   active: boolean;
 };
 
+function Switch({ on, label, disabled, onToggle }: { on: boolean; label: string; disabled?: boolean; onToggle: () => void }) {
+  return (
+    <button type="button" role="switch" aria-checked={on} aria-label={label} className="switch" disabled={disabled} onClick={onToggle}>
+      <span />
+    </button>
+  );
+}
+
 export default function ServicesManager({
   rows,
   categories,
@@ -35,9 +43,12 @@ export default function ServicesManager({
 }) {
   const [showCategories, setShowCategories] = useState(false);
   const closeCategories = useCallback(() => setShowCategories(false), []);
-  const [editing, setEditing] = useState<ServiceRow | "new" | null>(null);
+  // "newIn" abre o cadastro já com a categoria do card em que se clicou.
+  const [editing, setEditing] = useState<ServiceRow | { newIn: number | "" } | null>(null);
+  const [busy, startTransition] = useTransition();
   const close = useCallback(() => setEditing(null), []);
-  const current = editing && editing !== "new" ? editing : null;
+  const current = editing && "id" in editing ? editing : null;
+  const created = editing && "newIn" in editing ? editing : null;
 
   return (
     <>
@@ -50,48 +61,64 @@ export default function ServicesManager({
             </button>
           ) : null}
           {canManage ? (
-            <button type="button" className="btn" onClick={() => setEditing("new")}>
+            <button type="button" className="btn" onClick={() => setEditing({ newIn: "" })}>
               <Icon name="plus" /> Novo serviço
             </button>
           ) : null}
         </div>
       </div>
 
-      <div className="card" style={{ padding: 0, overflowX: "auto" }}>
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Serviço</th>
-              <th>Categoria</th>
-              <th>Duração</th>
-              <th>Preço</th>
-              <th>Online</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((s) => (
-              <tr key={s.id} style={s.active ? undefined : { opacity: 0.55 }}>
-                <td>
-                  {canManage ? (
-                    <button type="button" className="link-btn name" onClick={() => setEditing(s)}>
-                      {s.name}
+      {categories.length === 0 ? <div className="card muted">Nenhuma categoria ainda. Cadastre a primeira em “Categorias” para começar.</div> : null}
+
+      <div className="cat-grid">
+        {categories.map((c) => {
+          const svcs = rows.filter((s) => s.categoryId === c.id);
+          return (
+            <section key={c.id} className="cat-card" aria-label={c.name}>
+              <header className="cat-head">
+                <h2>{c.name}</h2>
+                <span>{svcs.length === 1 ? "1 serviço" : `${svcs.length} serviços`}</span>
+              </header>
+              <div className="cat-body">
+                {svcs.length === 0 ? (
+                  <div className="muted small" style={{ padding: "14px 0" }}>
+                    Nenhum serviço nesta categoria.
+                  </div>
+                ) : null}
+                {svcs.map((s) => (
+                  <div key={s.id} className="svc-row" style={s.active ? undefined : { opacity: 0.55 }}>
+                    <div className="svc-main">
+                      {canManage ? (
+                        <button type="button" className="link-btn name" onClick={() => setEditing(s)}>
+                          {s.name}
+                        </button>
+                      ) : (
+                        <strong>{s.name}</strong>
+                      )}
+                      <span className="muted small">
+                        {s.durationLabel}
+                        {!s.publicVisible ? " · só interno" : ""}
+                        {!s.active ? " · inativo" : ""}
+                      </span>
+                    </div>
+                    <strong className="svc-price">{s.priceLabel}</strong>
+                    {canManage ? <Switch on={s.active} label={`${s.name}: ${s.active ? "ativo" : "inativo"}`} disabled={busy} onToggle={() => startTransition(() => setServiceActive(s.id, !s.active))} /> : null}
+                  </div>
+                ))}
+                {canManage ? (
+                  <div style={{ paddingTop: 14 }}>
+                    <button type="button" className="btn secondary" onClick={() => setEditing({ newIn: c.id })}>
+                      <Icon name="plus" /> Adicionar serviço
                     </button>
-                  ) : (
-                    <strong>{s.name}</strong>
-                  )}{" "}
-                  {!s.active ? <span className="chip gray">Inativo</span> : null}
-                </td>
-                <td>{s.categoryName}</td>
-                <td>{s.durationLabel}</td>
-                <td>{s.priceLabel}</td>
-                <td>{s.publicVisible ? "Sim" : "Não"}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  </div>
+                ) : null}
+              </div>
+            </section>
+          );
+        })}
       </div>
 
-      <Modal open={editing === "new"} onClose={close} title="Novo serviço">
+      <Modal open={created !== null} onClose={close} title="Novo serviço">
         {categories.length === 0 ? (
           <div className="stack">
             <div className="notice error" role="alert">
@@ -118,11 +145,12 @@ export default function ServicesManager({
           </div>
         ) : (
           <ServiceForm
+            key={String(created?.newIn)}
             categories={categories}
             action={createService}
             submitLabel="Cadastrar"
             onDone={close}
-            defaults={{ name: "", description: "", categoryId: "", durationMin: "45", bufferMin: "0", price: "", publicVisible: true }}
+            defaults={{ name: "", description: "", categoryId: String(created?.newIn ?? ""), durationMin: "45", bufferMin: "0", price: "", publicVisible: true }}
           />
         )}
       </Modal>
