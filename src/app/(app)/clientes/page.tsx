@@ -41,7 +41,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
   return (
     <ClientsManager rows={data} canEdit={can(user.accessRole, "clients.edit")} autoOpenNew={novo === "1"}>
       <form className="row" style={{ marginBottom: 16 }}>
-        <input name="q" defaultValue={term} placeholder="Buscar por nome ou telefone" style={{ maxWidth: 340 }} />
+        <input name="q" defaultValue={term} placeholder="Buscar por nome ou telefone…" aria-label="Buscar cliente por nome ou telefone" autoComplete="off" enterKeyHint="search" spellCheck={false} style={{ maxWidth: 340 }} />
         <label className="check small">
           <input type="checkbox" name="inativas" value="1" defaultChecked={!!inativas} /> Mostrar inativas
         </label>

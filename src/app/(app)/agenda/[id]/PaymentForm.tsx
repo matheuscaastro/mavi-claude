@@ -17,7 +17,7 @@ export default function PaymentForm({ appointmentId, dueInput }: { appointmentId
       <div className="grid-2">
         <label className="field">
           <span className="label">Valor recebido (R$)</span>
-          <input name="amount" inputMode="decimal" defaultValue={dueInput} required />
+          <input name="amount" inputMode="decimal" defaultValue={dueInput} autoComplete="off" spellCheck={false} required />
         </label>
         <div className="field">
           <span className="label">Forma de pagamento</span>

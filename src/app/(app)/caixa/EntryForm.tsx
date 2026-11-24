@@ -32,7 +32,7 @@ export default function EntryForm({ today, categories, onManageCategories }: { t
       <div className="grid-2">
         <label className="field">
           <span className="label">Valor (R$)</span>
-          <input name="amount" inputMode="decimal" placeholder="0,00" required />
+          <input name="amount" inputMode="decimal" placeholder="0,00…" autoComplete="off" spellCheck={false} required />
         </label>
         <label className="field">
           <span className="label">Data</span>
@@ -52,11 +52,11 @@ export default function EntryForm({ today, categories, onManageCategories }: { t
       </div>
       <label className="field">
         <span className="label">Descrição</span>
-        <input name="description" placeholder="Ex.: conta de luz de outubro" />
+        <input name="description" placeholder="Ex.: conta de luz de outubro…" autoComplete="off" />
       </label>
       <div className="row">
         <button className="btn" type="submit" disabled={pending}>
-          {pending ? "Salvando…" : "Lançar"}
+          {pending ? "Salvando…" : "Lançar no caixa"}
         </button>
       </div>
     </form>

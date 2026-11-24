@@ -40,7 +40,7 @@ export default function ClientForm({
       {state.ok && !onDone ? <div className="notice ok">Dados salvos.</div> : null}
       <label className="field">
         <span className="label">Nome completo *</span>
-        <input name="name" defaultValue={defaults.name} required />
+        <input name="name" defaultValue={defaults.name} autoComplete="off" spellCheck={false} required />
       </label>
       <div className="grid-2">
         <label className="field">
@@ -53,7 +53,7 @@ export default function ClientForm({
         </label>
         <label className="field">
           <span className="label">E-mail</span>
-          <input type="email" name="email" defaultValue={defaults.email} />
+          <input type="email" name="email" defaultValue={defaults.email} inputMode="email" autoComplete="off" spellCheck={false} />
         </label>
         <label className="field">
           <span className="label">CPF</span>
@@ -62,7 +62,7 @@ export default function ClientForm({
       </div>
       <label className="field">
         <span className="label">Observações</span>
-        <textarea name="notes" rows={3} defaultValue={defaults.notes} />
+        <textarea name="notes" rows={3} defaultValue={defaults.notes} autoComplete="off" />
       </label>
       <label className="check">
         <input type="checkbox" name="whatsappOptIn" defaultChecked={defaults.whatsappOptIn} />

@@ -18,6 +18,7 @@ export default function CashCategoriesManager({ categories }: { categories: Cash
     return r;
   }, {});
   const [busy, startTransition] = useTransition();
+  const [confirming, setConfirming] = useState<number | null>(null);
   const list = categories.filter((c) => c.kind === kind);
 
   return (
@@ -40,9 +41,9 @@ export default function CashCategoriesManager({ categories }: { categories: Cash
         <label className="field">
           <span className="label">Nova categoria de {kind === "expense" ? "despesa" : "receita"}</span>
           <div className="row" style={{ gap: 10 }}>
-            <input name="name" placeholder="Ex.: Manutenção" maxLength={40} required style={{ flex: 1 }} />
+            <input name="name" placeholder="Ex.: Manutenção…" maxLength={40} autoComplete="off" required style={{ flex: 1 }} />
             <button className="btn" type="submit" disabled={pending}>
-              {pending ? "Salvando…" : "Adicionar"}
+              {pending ? "Salvando…" : "Adicionar categoria"}
             </button>
           </div>
         </label>
@@ -52,9 +53,30 @@ export default function CashCategoriesManager({ categories }: { categories: Cash
         {list.map((c) => (
           <div key={c.id} className="row spread" style={{ alignItems: "center", gap: 12, padding: "10px 0", borderTop: "1px solid var(--line)" }}>
             <strong>{c.name}</strong>
-            <button type="button" className="btn secondary" disabled={busy} onClick={() => startTransition(async () => void (await deleteCashCategory(c.id)))}>
-              Excluir
-            </button>
+            {confirming === c.id ? (
+              <div className="row" style={{ gap: 8 }}>
+                <button
+                  type="button"
+                  className="btn danger"
+                  disabled={busy}
+                  onClick={() =>
+                    startTransition(async () => {
+                      await deleteCashCategory(c.id);
+                      setConfirming(null);
+                    })
+                  }
+                >
+                  Confirmar exclusão
+                </button>
+                <button type="button" className="btn secondary" onClick={() => setConfirming(null)}>
+                  Manter
+                </button>
+              </div>
+            ) : (
+              <button type="button" className="btn secondary" disabled={busy} onClick={() => setConfirming(c.id)}>
+                Excluir
+              </button>
+            )}
           </div>
         ))}
       </div>

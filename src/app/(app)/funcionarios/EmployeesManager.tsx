@@ -49,7 +49,7 @@ export default function EmployeesManager({ rows, services }: { rows: EmployeeRow
         <EmployeeForm
           action={createEmployee}
           isNew
-          submitLabel="Cadastrar"
+          submitLabel="Cadastrar funcionário"
           services={services}
           onDone={close}
           defaults={{

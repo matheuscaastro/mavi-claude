@@ -62,12 +62,15 @@ export default function AppShell({
 
   return (
     <div className={`shell${collapsed ? " collapsed" : ""}${drawer ? " drawer-open" : ""}`}>
+      <a className="skip-link" href="#conteudo">
+        Pular para o conteúdo
+      </a>
       <header className="mobile-bar">
         <button type="button" className="mobile-bar-btn" onClick={() => setDrawer(true)} aria-label="Abrir menu" aria-expanded={drawer} aria-controls="sidebar">
           <Icon name="menu" size={22} />
         </button>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo.jpg" alt="MAVI Podologia" />
+        <img src="/logo.jpg" alt="MAVI Podologia" width={150} height={150} />
       </header>
 
       <div className="scrim" onClick={() => setDrawer(false)} aria-hidden="true" />
@@ -76,7 +79,7 @@ export default function AppShell({
         <div className="sidebar-top">
           <div className="logo">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.jpg" alt="MAVI Podologia" />
+            <img src="/logo.jpg" alt="MAVI Podologia" width={150} height={150} />
           </div>
           <button type="button" className="side-btn close-drawer" onClick={() => setDrawer(false)} aria-label="Fechar menu">
             <Icon name="close" size={20} />
@@ -119,7 +122,9 @@ export default function AppShell({
         </div>
       </aside>
 
-      <main className="content">{children}</main>
+      <main className="content" id="conteudo" tabIndex={-1}>
+        {children}
+      </main>
     </div>
   );
 }

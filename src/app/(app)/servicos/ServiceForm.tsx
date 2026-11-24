@@ -40,11 +40,11 @@ export default function ServiceForm({
       ) : null}
       <label className="field">
         <span className="label">Nome do serviço</span>
-        <input name="name" defaultValue={defaults.name} required />
+        <input name="name" defaultValue={defaults.name} autoComplete="off" required />
       </label>
       <label className="field">
         <span className="label">Descrição (aparece na página pública)</span>
-        <textarea name="description" rows={2} defaultValue={defaults.description} />
+        <textarea name="description" rows={2} defaultValue={defaults.description} autoComplete="off" />
       </label>
       <div className="grid-2">
         <div className="field">
@@ -53,15 +53,15 @@ export default function ServiceForm({
         </div>
         <label className="field">
           <span className="label">Preço (R$)</span>
-          <input name="price" inputMode="decimal" defaultValue={defaults.price} placeholder="80,00" required />
+          <input name="price" inputMode="decimal" defaultValue={defaults.price} placeholder="80,00…" autoComplete="off" spellCheck={false} required />
         </label>
         <label className="field">
           <span className="label">Duração (minutos)</span>
-          <input name="durationMin" type="number" min={5} step={5} defaultValue={defaults.durationMin} required />
+          <input name="durationMin" type="number" inputMode="numeric" min={5} step={5} defaultValue={defaults.durationMin} autoComplete="off" required />
         </label>
         <label className="field">
           <span className="label">Intervalo de preparo depois (minutos)</span>
-          <input name="bufferMin" type="number" min={0} step={5} defaultValue={defaults.bufferMin} />
+          <input name="bufferMin" type="number" inputMode="numeric" min={0} step={5} defaultValue={defaults.bufferMin} autoComplete="off" />
         </label>
       </div>
       <label className="check">

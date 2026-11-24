@@ -9,7 +9,7 @@ type Staff = { id: number; name: string; jobTitle: string; serviceIds: number[] 
 type Slot = { time: string; employeeId: number };
 
 const brl = (c: number) => (c / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-const dur = (m: number) => (m >= 60 ? `${Math.floor(m / 60)}h${m % 60 ? String(m % 60).padStart(2, "0") : ""}` : `${m} min`);
+const dur = (m: number) => (m >= 60 ? `${Math.floor(m / 60)}h${m % 60 ? String(m % 60).padStart(2, "0") : ""}` : `${m} min`);
 const fmtDate = (d: string) => d.split("-").reverse().join("/");
 
 export default function BookingFlow(props: { services: Svc[]; staff: Staff[]; allowAny: boolean; minDate: string; maxDate: string }) {

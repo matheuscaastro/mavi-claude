@@ -58,19 +58,19 @@ export function RulesForm({
       <div className="grid-2">
         <label className="field">
           <span className="label">Antecedência mínima para agendar (horas)</span>
-          <input type="number" name="minNoticeHours" min={0} defaultValue={settings.minNoticeHours} />
+          <input type="number" name="minNoticeHours" inputMode="numeric" autoComplete="off" min={0} defaultValue={settings.minNoticeHours} />
         </label>
         <label className="field">
           <span className="label">Agendar com até (dias de antecedência)</span>
-          <input type="number" name="maxDaysAhead" min={1} defaultValue={settings.maxDaysAhead} />
+          <input type="number" name="maxDaysAhead" inputMode="numeric" autoComplete="off" min={1} defaultValue={settings.maxDaysAhead} />
         </label>
         <label className="field">
           <span className="label">Prazo para cancelar/remarcar online (horas antes)</span>
-          <input type="number" name="cancelDeadlineHours" min={0} defaultValue={settings.cancelDeadlineHours} />
+          <input type="number" name="cancelDeadlineHours" inputMode="numeric" autoComplete="off" min={0} defaultValue={settings.cancelDeadlineHours} />
         </label>
         <div className="field">
           <span className="label">Intervalo entre horários oferecidos</span>
-          <Select name="slotStepMin" defaultValue={String(settings.slotStepMin)} options={[5, 10, 15, 20, 30, 60].map((m) => ({ value: String(m), label: `${m} min` }))} aria-label="Intervalo entre horários" />
+          <Select name="slotStepMin" defaultValue={String(settings.slotStepMin)} options={[5, 10, 15, 20, 30, 60].map((m) => ({ value: String(m), label: `${m} min` }))} aria-label="Intervalo entre horários" />
         </div>
       </div>
       <label className="check">
@@ -98,7 +98,7 @@ export function ExceptionForm() {
         </label>
         <label className="field">
           <span className="label">Descrição</span>
-          <input name="label" placeholder="Feriado, recesso…" />
+          <input name="label" placeholder="Ex.: feriado, recesso…" autoComplete="off" />
         </label>
       </div>
       <label className="check">
@@ -148,11 +148,11 @@ export function MessagingForm({
       <div className="grid-2">
         <label className="field">
           <span className="label">Nome do salão nas mensagens</span>
-          <input name="salonName" defaultValue={settings.salonName} maxLength={60} required />
+          <input name="salonName" autoComplete="off" defaultValue={settings.salonName} maxLength={60} required />
         </label>
         <label className="field">
           <span className="label">Lembrete (horas antes do atendimento)</span>
-          <input type="number" name="reminderHoursBefore" min={2} max={168} defaultValue={settings.reminderHoursBefore} />
+          <input type="number" name="reminderHoursBefore" inputMode="numeric" autoComplete="off" min={2} max={168} defaultValue={settings.reminderHoursBefore} />
         </label>
       </div>
 
@@ -161,7 +161,7 @@ export function MessagingForm({
       </label>
       <label className="field">
         <span className="label">Texto da confirmação</span>
-        <textarea name="confirmationText" rows={4} defaultValue={settings.confirmationText} placeholder={DEFAULT_TEXTS.confirmation} />
+        <textarea name="confirmationText" autoComplete="off" rows={4} defaultValue={settings.confirmationText} placeholder={DEFAULT_TEXTS.confirmation} />
       </label>
 
       <label className="check">
@@ -169,7 +169,7 @@ export function MessagingForm({
       </label>
       <label className="field">
         <span className="label">Texto do lembrete</span>
-        <textarea name="reminderText" rows={4} defaultValue={settings.reminderText} placeholder={DEFAULT_TEXTS.reminder} />
+        <textarea name="reminderText" autoComplete="off" rows={4} defaultValue={settings.reminderText} placeholder={DEFAULT_TEXTS.reminder} />
       </label>
 
       <label className="check">
@@ -183,7 +183,7 @@ export function MessagingForm({
       </div>
       <label className="field">
         <span className="label">Texto do aniversário</span>
-        <textarea name="birthdayText" rows={3} defaultValue={settings.birthdayText} placeholder={DEFAULT_TEXTS.birthday} />
+        <textarea name="birthdayText" autoComplete="off" rows={3} defaultValue={settings.birthdayText} placeholder={DEFAULT_TEXTS.birthday} />
       </label>
 
       <p className="muted small" style={{ margin: 0 }}>

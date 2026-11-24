@@ -15,6 +15,7 @@ export default function CategoriesManager({ categories }: { categories: Category
   const [editing, setEditing] = useState<number | null>(null);
   const [draft, setDraft] = useState("");
   const [rowError, setRowError] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState<number | null>(null);
   const [busy, startTransition] = useTransition();
 
   function save(id: number) {
@@ -32,6 +33,7 @@ export default function CategoriesManager({ categories }: { categories: Category
     startTransition(async () => {
       const r = await deleteCategory(id);
       setRowError(r.error ?? null);
+      setConfirming(null);
     });
   }
 
@@ -46,9 +48,9 @@ export default function CategoriesManager({ categories }: { categories: Category
         <label className="field">
           <span className="label">Nova categoria</span>
           <div className="row" style={{ gap: 10 }}>
-            <input name="name" placeholder="Ex.: Podologia" maxLength={40} required style={{ flex: 1 }} />
+            <input name="name" placeholder="Ex.: Podologia…" maxLength={40} autoComplete="off" required style={{ flex: 1 }} />
             <button className="btn" type="submit" disabled={pending}>
-              {pending ? "Salvando…" : "Adicionar"}
+              {pending ? "Salvando…" : "Adicionar categoria"}
             </button>
           </div>
         </label>
@@ -66,10 +68,10 @@ export default function CategoriesManager({ categories }: { categories: Category
           <div key={c.id} className="row spread" style={{ alignItems: "center", gap: 12, padding: "10px 0", borderTop: "1px solid var(--line)" }}>
             {editing === c.id ? (
               <>
-                <input value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={40} aria-label="Nome da categoria" style={{ flex: 1 }} />
+                <input name="name" value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={40} autoComplete="off" aria-label="Nome da categoria" style={{ flex: 1 }} />
                 <div className="row" style={{ gap: 8 }}>
                   <button type="button" className="btn" disabled={busy} onClick={() => save(c.id)}>
-                    Salvar
+                    Salvar nome
                   </button>
                   <button type="button" className="btn secondary" onClick={() => setEditing(null)}>
                     Cancelar
@@ -94,9 +96,20 @@ export default function CategoriesManager({ categories }: { categories: Category
                   >
                     Renomear
                   </button>
-                  <button type="button" className="btn secondary" disabled={busy || c.total > 0} title={c.total > 0 ? "Só é possível excluir categorias sem serviços." : undefined} onClick={() => remove(c.id)}>
-                    Excluir
-                  </button>
+                  {confirming === c.id ? (
+                    <>
+                      <button type="button" className="btn danger" disabled={busy} onClick={() => remove(c.id)}>
+                        Confirmar exclusão
+                      </button>
+                      <button type="button" className="btn secondary" onClick={() => setConfirming(null)}>
+                        Manter categoria
+                      </button>
+                    </>
+                  ) : (
+                    <button type="button" className="btn secondary" disabled={busy || c.total > 0} title={c.total > 0 ? "Só é possível excluir categorias sem serviços." : undefined} onClick={() => setConfirming(c.id)}>
+                      Excluir
+                    </button>
+                  )}
                 </div>
               </>
             )}

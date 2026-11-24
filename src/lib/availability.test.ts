@@ -123,7 +123,7 @@ describe("datas no fuso do salão", () => {
   it("formata horas e durações", () => {
     expect(formatTime(510)).toBe("08:30");
     expect(formatDuration(90)).toBe("1h30");
-    expect(formatDuration(45)).toBe("45 min");
+    expect(formatDuration(45)).toBe("45 min");
     expect(formatDuration(120)).toBe("2h");
   });
 });

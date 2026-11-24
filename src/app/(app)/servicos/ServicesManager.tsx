@@ -148,7 +148,7 @@ export default function ServicesManager({
             key={String(created?.newIn)}
             categories={categories}
             action={createService}
-            submitLabel="Cadastrar"
+            submitLabel="Cadastrar serviço"
             onDone={close}
             defaults={{ name: "", description: "", categoryId: String(created?.newIn ?? ""), durationMin: "45", bufferMin: "0", price: "", publicVisible: true }}
           />

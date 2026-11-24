@@ -23,11 +23,11 @@ export default function LoginForm() {
 
       <label className="field">
         <span className="label">E-mail</span>
-        <input type="email" name="email" defaultValue={state.email} autoComplete="username" placeholder="voce@exemplo.com" required />
+        <input type="email" name="email" defaultValue={state.email} autoComplete="username" inputMode="email" spellCheck={false} placeholder="voce@exemplo.com…" required />
       </label>
       <label className="field">
         <span className="label">Senha</span>
-        <input type="password" name="password" autoComplete="current-password" placeholder="Sua senha" required />
+        <input type="password" name="password" autoComplete="current-password" placeholder="Sua senha…" required />
       </label>
       <label className="check small">
         <input type="checkbox" name="remember" />

@@ -47,11 +47,11 @@ export default function EmployeeForm({
       <div className="grid-2">
         <label className="field">
           <span className="label">Nome</span>
-          <input name="name" defaultValue={defaults.name} required />
+          <input name="name" defaultValue={defaults.name} autoComplete="off" spellCheck={false} required />
         </label>
         <label className="field">
           <span className="label">Cargo</span>
-          <input name="jobTitle" defaultValue={defaults.jobTitle} placeholder="Podóloga" />
+          <input name="jobTitle" defaultValue={defaults.jobTitle} placeholder="Ex.: podóloga…" autoComplete="off" />
         </label>
         <label className="field">
           <span className="label">Telefone</span>
@@ -59,7 +59,7 @@ export default function EmployeeForm({
         </label>
         <label className="field">
           <span className="label">E-mail (usado no login)</span>
-          <input type="email" name="email" defaultValue={defaults.email} required />
+          <input type="email" name="email" defaultValue={defaults.email} inputMode="email" autoComplete="off" spellCheck={false} required />
         </label>
         <div className="field">
           <span className="label">Perfil de acesso</span>

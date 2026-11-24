@@ -57,6 +57,7 @@ export default function MaskedInput({
       value={value}
       required={required}
       inputMode={cfg.inputMode}
+      spellCheck={false}
       autoComplete={autoComplete ?? cfg.autoComplete}
       placeholder={placeholder ?? cfg.placeholder}
       pattern={cfg.pattern}

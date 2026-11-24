@@ -11,7 +11,7 @@ type Slot = { time: string; employeeId: number };
 type Availability = { closed: boolean; slots: Slot[]; durationMin: number; totalCents: number; reason?: "no_staff" | "staff_not_eligible"; eligible?: { id: number }[] };
 
 const brl = (c: number) => (c / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-const dur = (m: number) => (m >= 60 ? `${Math.floor(m / 60)}h${m % 60 ? String(m % 60).padStart(2, "0") : ""}` : `${m} min`);
+const dur = (m: number) => (m >= 60 ? `${Math.floor(m / 60)}h${m % 60 ? String(m % 60).padStart(2, "0") : ""}` : `${m} min`);
 
 export default function NewAppointmentForm(props: {
   services: Svc[];
@@ -138,7 +138,7 @@ export default function NewAppointmentForm(props: {
 
         <div className="card stack">
           <div className="section-title">Observações</div>
-          <textarea name="notes" rows={2} />
+          <textarea name="notes" rows={2} autoComplete="off" />
         </div>
       </div>
 

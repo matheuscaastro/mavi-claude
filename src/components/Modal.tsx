@@ -7,6 +7,20 @@ import { Icon } from "./icons";
 export default function Modal({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: React.ReactNode }) {
   const ref = useRef<HTMLDialogElement>(null);
 
+  // Avisa antes de fechar a aba ou recarregar com um formulário preenchido e não salvo.
+  const dirty = useRef(false);
+  useEffect(() => {
+    dirty.current = false;
+    if (!open) return;
+    const warn = (e: BeforeUnloadEvent) => {
+      if (!dirty.current) return;
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [open]);
+
   useEffect(() => {
     const dlg = ref.current;
     if (!dlg) return;
@@ -33,7 +47,9 @@ export default function Modal({ open, onClose, title, children }: { open: boolea
               <Icon name="close" />
             </button>
           </div>
-          <div className="modal-body">{children}</div>
+          <div className="modal-body" onInput={() => (dirty.current = true)}>
+            {children}
+          </div>
         </div>
       ) : null}
     </dialog>

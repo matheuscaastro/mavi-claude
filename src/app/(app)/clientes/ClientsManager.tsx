@@ -103,7 +103,7 @@ export default function ClientsManager({ rows, canEdit, autoOpenNew, children }:
       </div>
 
       <Modal open={editing === "new"} onClose={closeAndClean} title="Nova cliente">
-        <ClientForm action={createClient} submitLabel="Cadastrar" defaults={EMPTY} onDone={closeAndClean} />
+        <ClientForm action={createClient} submitLabel="Cadastrar cliente" defaults={EMPTY} onDone={closeAndClean} />
       </Modal>
 
       <Modal open={current !== null} onClose={close} title={current?.name ?? "Cliente"}>

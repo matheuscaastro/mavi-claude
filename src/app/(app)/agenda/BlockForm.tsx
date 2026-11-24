@@ -33,7 +33,7 @@ export default function BlockForm({ date, staff }: { date: string; staff: { id: 
       </div>
       <label className="field">
         <span className="label">Motivo</span>
-        <input name="reason" placeholder="Almoço, folga, curso…" />
+        <input name="reason" placeholder="Ex.: almoço, folga, curso…" autoComplete="off" />
       </label>
       <div className="row">
         <button className="btn" type="submit" disabled={pending}>
