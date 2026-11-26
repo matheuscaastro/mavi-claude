@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState, useTransition } from "react";
+import { useCallback, useOptimistic, useState, useTransition } from "react";
 import Modal from "@/components/Modal";
 import { Icon } from "@/components/icons";
 import CategoriesManager, { type CategoryRow } from "./CategoriesManager";
@@ -31,7 +31,7 @@ function Switch({ on, label, disabled, onToggle }: { on: boolean; label: string;
 }
 
 export default function ServicesManager({
-  rows,
+  rows: serverRows,
   categories,
   canManage,
   canManageCategories,
@@ -46,6 +46,8 @@ export default function ServicesManager({
   // "newIn" abre o cadastro já com a categoria do card em que se clicou.
   const [editing, setEditing] = useState<ServiceRow | { newIn: number | "" } | null>(null);
   const [busy, startTransition] = useTransition();
+  // Interruptor responde na hora; se a ação falhar, a tela volta ao valor do servidor.
+  const [rows, setOptimisticActive] = useOptimistic(serverRows, (list, p: { id: number; active: boolean }) => list.map((s) => (s.id === p.id ? { ...s, active: p.active } : s)));
   const close = useCallback(() => setEditing(null), []);
   const current = editing && "id" in editing ? editing : null;
   const created = editing && "newIn" in editing ? editing : null;
@@ -102,7 +104,12 @@ export default function ServicesManager({
                       </span>
                     </div>
                     <strong className="svc-price">{s.priceLabel}</strong>
-                    {canManage ? <Switch on={s.active} label={`${s.name}: ${s.active ? "ativo" : "inativo"}`} disabled={busy} onToggle={() => startTransition(() => setServiceActive(s.id, !s.active))} /> : null}
+                    {canManage ? <Switch on={s.active} label={`${s.name}: ${s.active ? "ativo" : "inativo"}`} disabled={busy} onToggle={() =>
+                      startTransition(async () => {
+                        setOptimisticActive({ id: s.id, active: !s.active });
+                        await setServiceActive(s.id, !s.active);
+                      })
+                    } /> : null}
                   </div>
                 ))}
                 {canManage ? (
