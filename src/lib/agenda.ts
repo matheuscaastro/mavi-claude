@@ -1,5 +1,6 @@
 import "server-only";
 import { randomBytes } from "node:crypto";
+import { cache } from "react";
 import { and, eq, gt, inArray, lt, ne } from "drizzle-orm";
 import { db } from "@db/index";
 import {
@@ -38,10 +39,11 @@ export const DEFAULT_SETTINGS = {
   birthdayText: "",
 };
 
-export async function getSettings() {
+/** Configurações do salão. Em cache por requisição: várias partes da mesma tela pedem a mesma linha. */
+export const getSettings = cache(async () => {
   const [row] = await db.select().from(salonSettings).where(eq(salonSettings.id, 1));
   return row ?? DEFAULT_SETTINGS;
-}
+});
 
 /** Janela de funcionamento do salão no dia (null = fechado). */
 export async function getSalonWindow(date: string): Promise<Interval | null> {

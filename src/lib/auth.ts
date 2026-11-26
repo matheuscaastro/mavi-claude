@@ -2,6 +2,7 @@ import "server-only";
 import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
 import { cookies } from "next/headers";
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { db, schema } from "@db/index";
 import type { AccessRole, Employee } from "@db/schema";
@@ -68,15 +69,18 @@ export async function logout() {
   jar.delete(SESSION_COOKIE);
 }
 
-/** Funcionária logada (confere no banco se ainda está ativa), ou null. */
-export async function getCurrentUser(): Promise<Employee | null> {
+/**
+ * Funcionária logada (confere no banco se ainda está ativa), ou null.
+ * `cache` do React: o layout e a página pedem o mesmo usuário na mesma requisição e só uma consulta sai.
+ */
+export const getCurrentUser = cache(async (): Promise<Employee | null> => {
   const jar = await cookies();
   const session = await verifySession(jar.get(SESSION_COOKIE)?.value);
   if (!session) return null;
   const [employee] = await db.select().from(schema.employees).where(eq(schema.employees.id, session.sub)).limit(1);
   if (!employee || !employee.active) return null;
   return employee;
-}
+});
 
 /** Exige login e, opcionalmente, uma permissão. Sem login vai para /login; sem permissão para a agenda. */
 export async function requireUser(permission?: Permission): Promise<Employee> {
