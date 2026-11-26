@@ -24,7 +24,7 @@ export type ClientRow = {
 
 const EMPTY = { name: "", phone: "", email: "", birthDate: "", cpf: "", notes: "", whatsappOptIn: false };
 
-export default function ClientsManager({ rows, canEdit, autoOpenNew, children }: { rows: ClientRow[]; canEdit: boolean; autoOpenNew: boolean; children: React.ReactNode }) {
+export default function ClientsManager({ rows, canEdit, autoOpenNew, children, footer }: { rows: ClientRow[]; canEdit: boolean; autoOpenNew: boolean; children: React.ReactNode; footer?: React.ReactNode }) {
   const router = useRouter();
   const [editing, setEditing] = useState<ClientRow | "new" | null>(null);
   const close = useCallback(() => setEditing(null), []);
@@ -101,6 +101,7 @@ export default function ClientsManager({ rows, canEdit, autoOpenNew, children }:
           </tbody>
         </table>
       </div>
+      {footer}
 
       <Modal open={editing === "new"} onClose={closeAndClean} title="Nova cliente">
         <ClientForm action={createClient} submitLabel="Cadastrar cliente" defaults={EMPTY} onDone={closeAndClean} />

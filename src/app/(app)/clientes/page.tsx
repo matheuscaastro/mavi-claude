@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { and, asc, eq, ilike, or, sql } from "drizzle-orm";
 import { db } from "@db/index";
 import { clients } from "@db/schema";
@@ -8,9 +9,14 @@ import ClientsManager, { type ClientRow } from "./ClientsManager";
 
 export const metadata = { title: "Clientes" };
 
-export default async function ClientsPage({ searchParams }: { searchParams: Promise<{ q?: string; inativas?: string; novo?: string }> }) {
+const PAGE_SIZE = 50;
+const MAX_ROWS = 500;
+
+export default async function ClientsPage({ searchParams }: { searchParams: Promise<{ q?: string; inativas?: string; novo?: string; limite?: string }> }) {
   const user = await requireUser("clients.view");
-  const { q = "", inativas, novo } = await searchParams;
+  const { q = "", inativas, novo, limite } = await searchParams;
+  // Lista em páginas de 50: "Carregar mais" soma mais 50 (teto de 500). Pede uma linha a mais para saber se ainda há resto.
+  const pageSize = Math.min(Math.max(Math.trunc(Number(limite)) || PAGE_SIZE, PAGE_SIZE), MAX_ROWS);
   const term = q.trim();
   const digits = term.replace(/\D/g, "");
 
@@ -22,9 +28,10 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
     .from(clients)
     .where(and(inativas ? undefined : eq(clients.active, true), search))
     .orderBy(asc(sql`lower(${clients.name})`))
-    .limit(200);
+    .limit(pageSize + 1);
 
-  const data: ClientRow[] = rows.map((c) => ({
+  const hasMore = rows.length > pageSize;
+  const data: ClientRow[] = rows.slice(0, pageSize).map((c) => ({
     id: c.id,
     name: c.name,
     phone: c.phone,
@@ -39,7 +46,26 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
   }));
 
   return (
-    <ClientsManager rows={data} canEdit={can(user.accessRole, "clients.edit")} autoOpenNew={novo === "1"}>
+    <ClientsManager rows={data} canEdit={can(user.accessRole, "clients.edit")} autoOpenNew={novo === "1"}
+      footer={
+        hasMore ? (
+          <div className="row" style={{ justifyContent: "center", gap: 12 }}>
+            <span className="muted small">Mostrando {data.length} clientes.</span>
+            {pageSize < MAX_ROWS ? (
+              <Link
+                className="btn secondary"
+                scroll={false}
+                href={{ pathname: "/clientes", query: { ...(term ? { q: term } : {}), ...(inativas ? { inativas } : {}), limite: pageSize + PAGE_SIZE } }}
+              >
+                Carregar mais
+              </Link>
+            ) : (
+              <span className="muted small">Refine a busca para ver os demais.</span>
+            )}
+          </div>
+        ) : null
+      }
+    >
       <form className="row" style={{ marginBottom: 16 }}>
         <input name="q" defaultValue={term} placeholder="Buscar por nome ou telefone…" aria-label="Buscar cliente por nome ou telefone" autoComplete="off" enterKeyHint="search" spellCheck={false} style={{ maxWidth: 340 }} />
         <label className="check small">
