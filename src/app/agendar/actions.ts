@@ -9,9 +9,12 @@ import { db } from "@db/index";
 import { appointmentEvents, appointmentItems, appointments, clients } from "@db/schema";
 import { bookAppointment, getAvailability, getSettings, isOverlapViolation } from "@/lib/agenda";
 import { safeSync } from "@/lib/messages/queue";
+import { notify } from "@/lib/notifications";
+import { notifyWaitlistForFreedSlot } from "@/lib/waitlist";
+import { saveWish } from "@/lib/waitlist-save";
 import { normalizePhone } from "@/lib/phone";
 import { allow, clientIp } from "@/lib/rate-limit";
-import { addDays, isValidDate, isValidTime, localDateTime, todayLocal } from "@/lib/time";
+import { addDays, formatDateShort, isValidDate, isValidTime, localDate, localDateTime, localTime, todayLocal } from "@/lib/time";
 
 export type FormState = { error?: string };
 
@@ -81,6 +84,7 @@ export async function bookPublic(_p: FormState, formData: FormData): Promise<For
   const r = await bookAppointment({ clientId: client.id, employeeId: v.employeeId, date: v.date, time: v.time, serviceIds, origin: "online", createdBy: null, publicToken: token });
   if (!r.ok) return { error: r.error };
   await safeSync(r.id, { confirm: true });
+  await notify({ kind: "online_booking", title: `Novo agendamento online: ${client.name}`, body: `${formatDateShort(v.date)} às ${v.time}`, href: `/agenda/${r.id}` });
   revalidatePath("/agenda");
   redirect(`/agendar/meu/${token}?novo=1`);
 }
@@ -107,6 +111,9 @@ export async function cancelPublic(token: string) {
       await tx.insert(appointmentEvents).values({ appointmentId: appt.id, employeeId: null, action: "status", details: { from: appt.status, to: "cancelled", by: "client" } });
     });
     await safeSync(appt.id, { confirm: false });
+    const [c] = await db.select({ name: clients.name }).from(clients).where(eq(clients.id, appt.clientId));
+    await notify({ kind: "online_cancel", title: `Cancelamento online: ${c?.name ?? "cliente"}`, body: `Era ${formatDateShort(localDate(appt.startsAt))} às ${localTime(appt.startsAt)}`, href: `/agenda/${appt.id}` });
+    await notifyWaitlistForFreedSlot(appt.id);
     revalidatePath("/agenda");
   }
   redirect(`/agendar/meu/${token}`);
@@ -149,7 +156,48 @@ export async function reschedulePublic(token: string, _p: FormState, formData: F
     throw e;
   }
   await safeSync(appt.id, { confirm: true });
+  const [c] = await db.select({ name: clients.name }).from(clients).where(eq(clients.id, appt.clientId));
+  await notify({ kind: "online_reschedule", title: `Remarcação online: ${c?.name ?? "cliente"}`, body: `Agora ${formatDateShort(date)} às ${time} (era ${formatDateShort(localDate(appt.startsAt))} às ${localTime(appt.startsAt)})`, href: `/agenda/${appt.id}` });
   revalidatePath("/agenda");
   redirect(`/agendar/meu/${token}?remarcado=1`);
 }
 
+
+const waitSchema = z.object({
+  name: z.string().trim().min(2, "Informe seu nome.").max(80, "Nome muito longo."),
+  phone: z.string().trim().min(1, "Informe seu WhatsApp."),
+  date: z.string().refine(isValidDate, "Escolha o dia."),
+  period: z.enum(["any", "morning", "afternoon"]),
+});
+
+/** A cliente entra na lista de espera quando o dia escolhido está cheio. A equipe avisa se abrir vaga. */
+export async function joinWaitlistPublic(_p: FormState & { ok?: boolean }, formData: FormData): Promise<FormState & { ok?: boolean }> {
+  if (String(formData.get("website") ?? "") !== "") return { error: "Não foi possível entrar na lista." };
+  if (!allow(`waitlist:${await clientIp()}`, 6, 60 * 60_000)) return { error: "Muitas tentativas. Tente novamente mais tarde ou fale com o salão." };
+  const serviceIds = formData.getAll("serviceIds").map(Number).filter((n) => Number.isInteger(n) && n > 0);
+  if (serviceIds.length === 0) return { error: "Escolha ao menos um serviço." };
+  const parsed = waitSchema.safeParse({ name: formData.get("name"), phone: formData.get("phone"), date: formData.get("date"), period: formData.get("period") });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
+  const phone = normalizePhone(parsed.data.phone);
+  if (!phone) return { error: "WhatsApp inválido. Use DDD + número." };
+  const settings = await getSettings();
+  const today = todayLocal();
+  if (parsed.data.date < today || parsed.data.date > addDays(today, settings.maxDaysAhead)) return { error: "Essa data não está disponível." };
+  const emp = Number(formData.get("preferredEmployee"));
+  const r = await saveWish({
+    name: parsed.data.name,
+    phone,
+    serviceIds,
+    employeeId: Number.isInteger(emp) && emp > 0 ? emp : null,
+    wantedFrom: parsed.data.date,
+    wantedTo: parsed.data.date,
+    period: parsed.data.period,
+    note: "",
+    origin: "online",
+    publicOnly: true,
+  });
+  if (!r.ok) return { error: r.error };
+  const names = serviceIds.length;
+  await notify({ kind: "waitlist_match", title: `Novo pedido na lista de espera: ${parsed.data.name}`, body: `${formatDateShort(parsed.data.date)} · ${names} serviço(s)`, href: "/lista-de-espera" });
+  return { ok: true };
+}

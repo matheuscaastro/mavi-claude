@@ -8,6 +8,8 @@ import { getSalonWindow } from "@/lib/agenda";
 import { addDays, formatDateLong, formatTime, isValidDate, localDateTime, localMinutes, parseTime, todayLocal, localTime } from "@/lib/time";
 import { STATUS_LABEL } from "@/lib/status";
 import { Icon } from "@/components/icons";
+import EmployeeAvatar from "@/components/EmployeeAvatar";
+import { photoUrl } from "@/lib/employee-photo-shared";
 import BlockForm from "./BlockForm";
 import { deleteBlock } from "./actions";
 import type { CSSProperties } from "react";
@@ -154,7 +156,7 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
               <div />
               {staff.map((e) => (
                 <div key={e.id} className="who">
-                  <span className="dot" style={{ background: e.color }} />
+                  <EmployeeAvatar name={e.name} color={e.color} photo={photoUrl(e.id, e.photoUpdatedAt)} size={32} />
                   <strong>{e.name}</strong>
                 </div>
               ))}

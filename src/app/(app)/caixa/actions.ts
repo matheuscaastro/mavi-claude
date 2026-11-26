@@ -1,13 +1,13 @@
 "use server";
 
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, eq, gte, isNull, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@db/index";
-import { appointments, cashCategories, cashEntries } from "@db/schema";
+import { appointments, cashCategories, cashEntries, cashSessions } from "@db/schema";
 import { requireUser } from "@/lib/auth";
-import { METHODS } from "@/lib/cash";
+import { expectedCash, METHODS } from "@/lib/cash";
 import { isUniqueViolation } from "@/lib/db-errors";
 import { parseBRL } from "@/lib/money";
 import { isValidDate, todayLocal } from "@/lib/time";
@@ -125,6 +125,46 @@ export async function createCashCategory(_p: CashCategoryState, formData: FormDa
 export async function deleteCashCategory(id: number): Promise<CashCategoryState> {
   await requireUser("cash.view");
   await db.delete(cashCategories).where(eq(cashCategories.id, id));
+  revalidatePath("/caixa");
+  return { ok: true };
+}
+
+/** Abre o caixa com o troco inicial (pode ser zero). Só uma abertura por vez. */
+export async function openCash(_p: FormState, formData: FormData): Promise<FormState> {
+  const user = await requireUser("cash.view");
+  const raw = String(formData.get("opening") ?? "").trim();
+  const cents = raw === "" ? 0 : parseBRL(raw);
+  if (cents === null) return { error: "Informe um valor válido para o troco inicial." };
+  try {
+    await db.insert(cashSessions).values({ openingCents: cents, openedBy: user.id });
+  } catch (e) {
+    if (isUniqueViolation(e)) return { error: "O caixa já está aberto." };
+    throw e;
+  }
+  revalidatePath("/caixa");
+  return { ok: true };
+}
+
+/** Fecha o caixa: guarda o dinheiro esperado, o contado e a diferença. */
+export async function closeCash(_p: FormState, formData: FormData): Promise<FormState> {
+  const user = await requireUser("cash.view");
+  const counted = parseBRL(String(formData.get("counted") ?? ""));
+  if (counted === null) return { error: "Informe o dinheiro contado na gaveta." };
+  const note = String(formData.get("note") ?? "").trim().slice(0, 500);
+  const result = await db.transaction(async (tx) => {
+    const [open] = await tx.select().from(cashSessions).where(isNull(cashSessions.closedAt)).for("update");
+    if (!open) return { error: "O caixa não está aberto." };
+    const entries = await tx
+      .select({ kind: cashEntries.kind, method: cashEntries.method, amountCents: cashEntries.amountCents, voidedAt: cashEntries.voidedAt })
+      .from(cashEntries)
+      .where(gte(cashEntries.createdAt, open.openedAt));
+    await tx
+      .update(cashSessions)
+      .set({ closedAt: new Date(), closedBy: user.id, expectedCents: expectedCash(open.openingCents, entries), countedCents: counted, note })
+      .where(eq(cashSessions.id, open.id));
+    return { ok: true as const };
+  });
+  if ("error" in result) return { error: result.error };
   revalidatePath("/caixa");
   return { ok: true };
 }

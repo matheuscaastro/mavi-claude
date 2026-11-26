@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 import Modal from "@/components/Modal";
 import { Icon } from "@/components/icons";
+import EmployeeAvatar from "@/components/EmployeeAvatar";
 import EmployeeForm, { type EmployeeDefaults } from "./EmployeeForm";
 import { createEmployee, setEmployeeActive, updateEmployee } from "./actions";
 
@@ -29,9 +30,7 @@ export default function EmployeesManager({ rows, services }: { rows: EmployeeRow
       <div className="people">
         {rows.map((e) => (
           <button key={e.id} type="button" className="person" style={{ ...(e.active ? {} : { opacity: 0.55 }), flexDirection: "row", alignItems: "center", gap: 12, textAlign: "left", font: "inherit", cursor: "pointer" }} onClick={() => setEditing(e)}>
-            <span className="avatar" style={{ background: e.color, color: "#fff" }} aria-hidden="true">
-              {e.name.charAt(0)}
-            </span>
+            <EmployeeAvatar name={e.name} color={e.color} photo={e.photo} size={44} />
             <div>
               <strong>{e.name}</strong>
               <div className="muted small">{e.jobTitle || e.roleLabel}</div>
@@ -60,6 +59,8 @@ export default function EmployeesManager({ rows, services }: { rows: EmployeeRow
             accessRole: "professional",
             performsServices: true,
             color: "#3D6B62",
+            commissionPercent: 0,
+            photo: null,
             serviceIds: services.map((s) => s.id),
           }}
         />

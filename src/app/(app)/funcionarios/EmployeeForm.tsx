@@ -1,7 +1,10 @@
 "use client";
 
 import Select from "@/components/Select";
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
+import { Icon } from "@/components/icons";
+import EmployeeAvatar from "@/components/EmployeeAvatar";
+import { PHOTO_ACCEPT, PHOTO_MAX_BYTES, PHOTO_MAX_MB } from "@/lib/employee-photo-shared";
 import MaskedInput from "@/components/MaskedInput";
 import type { EmployeeFormState } from "./actions";
 
@@ -13,6 +16,9 @@ export type EmployeeDefaults = {
   accessRole: "admin" | "reception" | "professional";
   performsServices: boolean;
   color: string;
+  commissionPercent: number;
+  /** Endereço da foto atual, ou nada se ela não tem foto. */
+  photo: string | null;
   serviceIds: number[];
 };
 
@@ -34,16 +40,102 @@ export default function EmployeeForm({
   onDone: () => void;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [fileName, setFileName] = useState("");
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const [removePhoto, setRemovePhoto] = useState(false);
+  // O erro do servidor sai da tela quando a pessoa escolhe outro arquivo, e volta se o envio falhar de novo.
+  const [staleError, setStaleError] = useState(false);
+
+  // Mostra a foto escolhida e avisa na hora se o arquivo não serve (o servidor confere de novo ao salvar).
+  function onPickPhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    setPhotoError(null);
+    setStaleError(true);
+    if (preview) URL.revokeObjectURL(preview);
+    setPreview(null);
+    setFileName("");
+    if (!file) return;
+    const reject = (msg: string) => {
+      setPhotoError(msg);
+      e.target.value = "";
+    };
+    if (!file.type.startsWith("image/") || !PHOTO_ACCEPT.split(",").includes(file.type)) {
+      return reject(file.type.startsWith("image/") ? "Formato não aceito. Envie uma foto em JPG, PNG ou WebP." : "O arquivo precisa ser uma imagem (JPG, PNG ou WebP).");
+    }
+    if (file.size > PHOTO_MAX_BYTES) return reject(`A foto tem ${(file.size / 1024 / 1024).toFixed(1).replace(".", ",")} MB e o limite é ${PHOTO_MAX_MB} MB. Escolha uma imagem menor.`);
+    setRemovePhoto(false);
+    setPreview(URL.createObjectURL(file));
+    setFileName(file.name);
+  }
+  function clearPhoto() {
+    if (fileRef.current) fileRef.current.value = "";
+    if (preview) URL.revokeObjectURL(preview);
+    setPreview(null);
+    setFileName("");
+    setPhotoError(null);
+  }
   useEffect(() => {
     if (state.ok) onDone();
   }, [state, onDone]);
   return (
-    <form action={formAction} className="stack">
-      {state.error ? (
+    <form
+      action={(fd) => {
+        setStaleError(false);
+        formAction(fd);
+      }}
+      className="stack"
+    >
+      {state.error && !staleError ? (
         <div className="notice error" role="alert">
           {state.error}
         </div>
       ) : null}
+      <div className="field">
+        <span className="label">Foto</span>
+        <div className="row" style={{ alignItems: "center", gap: 16 }}>
+          {preview ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={preview} alt="Pré-visualização da foto" width={72} height={72} style={{ width: 72, height: 72, borderRadius: "50%", objectFit: "cover", boxShadow: `0 0 0 2px ${defaults.color}` }} />
+          ) : (
+            <EmployeeAvatar name={defaults.name || "Nova funcionária"} color={defaults.color} photo={removePhoto ? null : defaults.photo} size={72} />
+          )}
+          <div className="stack" style={{ gap: 6 }}>
+            <div className="row" style={{ gap: 10, alignItems: "center" }}>
+              <label className="btn secondary file-btn">
+                <input ref={fileRef} className="sr-only" type="file" name="photo" accept={PHOTO_ACCEPT} onChange={onPickPhoto} aria-describedby="photo-help" />
+                <Icon name="camera" /> {preview || defaults.photo ? "Trocar foto" : "Escolher foto"}
+              </label>
+              {fileName ? (
+                <span className="file-name small" title={fileName}>
+                  {fileName}
+                </span>
+              ) : null}
+              {preview ? (
+                <button type="button" className="link-btn small" onClick={clearPhoto}>
+                  Cancelar
+                </button>
+              ) : null}
+            </div>
+            <span id="photo-help" className="muted tiny">
+              JPG, PNG ou WebP, até {PHOTO_MAX_MB} MB. Sem foto, aparecem as iniciais.
+            </span>
+            {!isNew && defaults.photo && !preview ? (
+              <label className="check small">
+                <input type="checkbox" name="removePhoto" checked={removePhoto} onChange={(e) => setRemovePhoto(e.target.checked)} />
+                Remover a foto atual
+              </label>
+            ) : null}
+          </div>
+        </div>
+        {photoError ? (
+          <div className="notice error" role="alert" style={{ marginTop: 8 }}>
+            {photoError}
+          </div>
+        ) : null}
+      </div>
+
       <div className="grid-2">
         <label className="field">
           <span className="label">Nome</span>
@@ -65,6 +157,10 @@ export default function EmployeeForm({
           <span className="label">Perfil de acesso</span>
           <Select name="accessRole" defaultValue={defaults.accessRole} options={[{ value: "professional", label: "Profissional" }, { value: "reception", label: "Recepção" }, { value: "admin", label: "Administradora" }]} aria-label="Perfil de acesso" />
         </div>
+        <label className="field">
+          <span className="label">Comissão (%)</span>
+          <input type="number" name="commissionPercent" min={0} max={100} step={1} defaultValue={defaults.commissionPercent} inputMode="numeric" />
+        </label>
         <label className="field">
           <span className="label">{isNew ? "Senha inicial" : "Nova senha (deixe vazio para manter)"}</span>
           <input type="password" name="password" autoComplete="new-password" minLength={8} required={isNew} />

@@ -1,5 +1,6 @@
 "use server";
 
+import { notifyWaitlistForFreedSlot } from "@/lib/waitlist";
 import { and, eq, gt, lt, ne } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -76,6 +77,7 @@ export async function changeStatus(id: number, next: AppointmentStatus) {
     await tx.insert(appointmentEvents).values({ appointmentId: id, employeeId: user.id, action: "status", details: { from: appt.status, to: next } });
   });
   await safeSync(id, { confirm: false });
+  if (next === "cancelled") await notifyWaitlistForFreedSlot(id);
   revalidatePath("/agenda");
   redirect(`/agenda/${id}`);
 }
