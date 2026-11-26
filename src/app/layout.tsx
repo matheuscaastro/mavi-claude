@@ -1,5 +1,10 @@
 import type { Metadata, Viewport } from "next";
+import localFont from "next/font/local";
 import "./globals.css";
+
+// Fontes hospedadas aqui (woff2 variável, só o subconjunto latino): sem pedir nada ao Google e sem bloquear a renderização.
+const inter = localFont({ src: "./fonts/inter-latin-wght-normal.woff2", weight: "100 900", display: "swap", variable: "--font-inter" });
+const cormorant = localFont({ src: "./fonts/cormorant-garamond-latin-wght-normal.woff2", weight: "300 700", display: "swap", variable: "--font-cormorant" });
 
 export const metadata: Metadata = {
   title: { default: "MAVI Podologia", template: "%s · MAVI Podologia" },
@@ -17,15 +22,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Inter:wght@400;500;600&display=swap"
-        />
-      </head>
+    <html lang="pt-BR" className={`${inter.variable} ${cormorant.variable}`}>
       <body>{children}</body>
     </html>
   );

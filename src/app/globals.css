@@ -31,8 +31,8 @@
   --shadow-lg: 0 30px 80px -24px rgba(10, 24, 21, 0.55);
   --grad-primary: linear-gradient(135deg, #2f5a52 0%, #1f3d38 100%);
   --ease: cubic-bezier(0.2, 0.7, 0.3, 1);
-  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-title: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --font-body: var(--font-inter), "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-title: var(--font-cormorant), "Cormorant Garamond", Georgia, "Times New Roman", serif;
 }
 
 * {
