@@ -29,14 +29,15 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
   const from = localDateTime(date, "00:00");
   const to = localDateTime(date, "23:59");
 
-  const staff = await db
+  // A equipe não depende dos agendamentos do dia: as quatro consultas saem juntas.
+  const staffQuery = db
     .select()
     .from(employees)
     .where(and(eq(employees.active, true), eq(employees.performsServices, true), viewAll ? undefined : eq(employees.id, user.id)))
     .orderBy(asc(employees.id));
-  const ids = staff.map((s) => s.id);
 
-  const [appts, blocks, window] = await Promise.all([
+  const [staff, appts, blocks, window] = await Promise.all([
+    staffQuery,
     db
       .select({
         id: appointments.id,
@@ -52,6 +53,7 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
     db.select().from(scheduleBlocks).where(and(lt(scheduleBlocks.startsAt, to), gt(scheduleBlocks.endsAt, from))),
     getSalonWindow(date),
   ]);
+  const ids = staff.map((s) => s.id);
   const mine = appts.filter((a) => ids.includes(a.employeeId));
   const myBlocks = blocks.filter((b) => ids.includes(b.employeeId));
   const itemRows = mine.length

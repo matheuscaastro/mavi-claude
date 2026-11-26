@@ -24,12 +24,13 @@ export default async function ClientPage({
   const user = await requireUser("clients.view");
   const id = Number((await params).id);
   if (!Number.isInteger(id)) notFound();
-  const [client] = await db.select().from(clients).where(eq(clients.id, id));
-  if (!client) notFound();
   const { salvo } = await searchParams;
   const canEdit = can(user.accessRole, "clients.edit");
 
-  const history = await db
+  // Cliente e histórico só dependem do id: saem juntos.
+  const [[client], history] = await Promise.all([
+    db.select().from(clients).where(eq(clients.id, id)),
+    db
     .select({
       id: appointments.id,
       startsAt: appointments.startsAt,
@@ -41,7 +42,9 @@ export default async function ClientPage({
     .innerJoin(employees, eq(employees.id, appointments.employeeId))
     .where(eq(appointments.clientId, id))
     .orderBy(desc(appointments.startsAt))
-    .limit(20);
+    .limit(20),
+  ]);
+  if (!client) notFound();
 
   return (
     <>

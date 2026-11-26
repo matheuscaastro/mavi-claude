@@ -26,15 +26,16 @@ export default async function CashPage({ searchParams }: { searchParams: Promise
   const key: PeriodKey = custom ? "personalizado" : PERIODS.some((p) => p.key === sp.periodo) ? (sp.periodo as PeriodKey) : "hoje";
   const range = resolvePeriod(key, today, sp.de, sp.ate);
 
-  const rows = await db
+  const [rows, categories] = await Promise.all([
+    db
     .select({ e: cashEntries, clientName: clients.name })
     .from(cashEntries)
     .leftJoin(appointments, eq(appointments.id, cashEntries.appointmentId))
     .leftJoin(clients, eq(clients.id, appointments.clientId))
     .where(and(gte(cashEntries.occurredOn, range.from), lte(cashEntries.occurredOn, range.to)))
-    .orderBy(desc(cashEntries.occurredOn), desc(cashEntries.id));
-
-  const categories = await db.select().from(cashCategories).orderBy(asc(cashCategories.name));
+    .orderBy(desc(cashEntries.occurredOn), desc(cashEntries.id)),
+    db.select().from(cashCategories).orderBy(asc(cashCategories.name)),
+  ]);
   const sum = summarize(rows.map((r) => r.e));
 
   return (
