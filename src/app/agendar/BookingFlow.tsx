@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useMemo, useState } from "react";
 import MaskedInput from "@/components/MaskedInput";
-import { bookPublic, type FormState } from "./actions";
+import { bookPublic, joinWaitlistPublic, type FormState } from "./actions";
 
 type Svc = { id: number; name: string; description: string; durationMin: number; priceCents: number };
 type Staff = { id: number; name: string; jobTitle: string; serviceIds: number[] };
@@ -11,6 +11,32 @@ type Slot = { time: string; employeeId: number };
 const brl = (c: number) => (c / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const dur = (m: number) => (m >= 60 ? `${Math.floor(m / 60)}h${m % 60 ? String(m % 60).padStart(2, "0") : ""}` : `${m} min`);
 const fmtDate = (d: string) => d.split("-").reverse().join("/");
+
+/**
+ * Fica dentro do formulário do agendamento (que já leva serviços, dia e a isca anti-robô), por isso não é um <form>:
+ * o botão envia o mesmo formulário para outra ação.
+ */
+function WaitlistBox({ who, date }: { who: string; date: string }) {
+  const [state, action, pending] = useActionState<FormState & { ok?: boolean }, FormData>(joinWaitlistPublic, {});
+  if (state.ok) return <div className="notice ok">Pronto! Você está na lista de espera. Se abrir uma vaga, o salão avisa pelo WhatsApp.</div>;
+  const noEnter = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") e.preventDefault();
+  };
+  return (
+    <div className="stack" style={{ marginTop: 12 }}>
+      <div className="small"><strong>Quer entrar na lista de espera para {fmtDate(date)}?</strong> Se alguém cancelar, o salão avisa você pelo WhatsApp.</div>
+      {state.error ? <div className="notice error" role="alert">{state.error}</div> : null}
+      <input type="hidden" name="preferredEmployee" value={who === "any" ? "" : who} />
+      <label className="field"><span className="label">Seu nome</span><input name="name" maxLength={80} autoComplete="name" onKeyDown={noEnter} /></label>
+      <label className="field"><span className="label">WhatsApp</span><MaskedInput kind="phone" name="phone" /></label>
+      <label className="field">
+        <span className="label">Melhor período</span>
+        <select name="period" defaultValue="any"><option value="any">Qualquer horário</option><option value="morning">Manhã</option><option value="afternoon">Tarde</option></select>
+      </label>
+      <button className="btn secondary" type="submit" formAction={action} disabled={pending}>{pending ? "Enviando…" : "Entrar na lista de espera"}</button>
+    </div>
+  );
+}
 
 export default function BookingFlow(props: { services: Svc[]; staff: Staff[]; allowAny: boolean; minDate: string; maxDate: string }) {
   const [state, action, pending] = useActionState<FormState, FormData>(bookPublic, {});
@@ -135,7 +161,12 @@ export default function BookingFlow(props: { services: Svc[]; staff: Staff[]; al
           </label>
           {loading ? <div className="muted small">Buscando horários…</div> : null}
           {note ? <div className="notice">{note}</div> : null}
-          {slots && !loading && !note && slots.length === 0 ? <div className="notice">Sem horários livres neste dia. Tente outra data.</div> : null}
+          {slots && !loading && !note && slots.length === 0 ? (
+            <div className="notice">
+              Sem horários livres neste dia. Tente outra data.
+              <WaitlistBox who={who} date={date} />
+            </div>
+          ) : null}
           {slots && slots.length > 0 ? (
             <div className="slot-grid" role="radiogroup" aria-label="Horário">
               {slots.map((s) => (

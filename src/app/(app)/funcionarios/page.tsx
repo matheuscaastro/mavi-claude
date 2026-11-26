@@ -2,6 +2,7 @@ import { asc, eq, sql } from "drizzle-orm";
 import { db } from "@db/index";
 import { employeeServices, employees, services } from "@db/schema";
 import { requireUser } from "@/lib/auth";
+import { photoUrl } from "@/lib/employee-photo-shared";
 import { ROLE_LABEL } from "@/lib/permissions";
 import { formatPhone } from "@/lib/phone";
 import EmployeesManager, { type EmployeeRow } from "./EmployeesManager";
@@ -24,6 +25,8 @@ export default async function EmployeesPage() {
     accessRole: e.accessRole,
     performsServices: e.performsServices,
     color: e.color,
+    commissionPercent: e.commissionPercent,
+    photo: photoUrl(e.id, e.photoUpdatedAt),
     serviceIds: links.filter((l) => l.employeeId === e.id).map((l) => l.serviceId),
     roleLabel: ROLE_LABEL[e.accessRole],
     active: e.active,

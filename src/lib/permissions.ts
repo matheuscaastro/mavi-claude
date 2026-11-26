@@ -17,7 +17,8 @@ export type Permission =
   | "employees.manage"
   | "settings.manage"
   | "cash.view" // fluxo de caixa completo (fase seguinte)
-  | "cash.register"; // registrar pagamento do atendimento (fase seguinte)
+  | "cash.register" // registrar pagamento do atendimento (fase seguinte)
+  | "reports.view"; // Visão Geral e Relatórios (só administradora)
 
 const MATRIX: Record<AccessRole, Permission[]> = {
   admin: [
@@ -33,6 +34,7 @@ const MATRIX: Record<AccessRole, Permission[]> = {
     "settings.manage",
     "cash.view",
     "cash.register",
+    "reports.view",
   ],
   reception: ["agenda.viewAll", "agenda.edit", "clients.view", "clients.edit", "services.view", "categories.manage", "cash.register"],
   professional: ["agenda.updateOwnStatus", "clients.view", "services.view"],

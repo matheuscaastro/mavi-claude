@@ -1,11 +1,13 @@
 import Link from "next/link";
-import { and, asc, desc, eq, gte, lte } from "drizzle-orm";
+import { and, asc, desc, eq, gte, isNotNull, isNull, lte } from "drizzle-orm";
 import { db } from "@db/index";
-import { appointments, cashCategories, cashEntries, clients } from "@db/schema";
+import { appointments, cashCategories, cashEntries, cashSessions, clients } from "@db/schema";
 import { requireUser } from "@/lib/auth";
-import { METHOD_LABEL, METHODS, resolvePeriod, summarize, type PeriodKey } from "@/lib/cash";
+import { dailySeries, expectedCash, METHOD_LABEL, METHODS, resolvePeriod, summarize, type PeriodKey } from "@/lib/cash";
+import CashChart from "@/components/CashChart";
 import { formatBRL } from "@/lib/money";
-import { formatDateShort, isValidDate, todayLocal } from "@/lib/time";
+import { formatDateShort, isValidDate, localDate, localTime, todayLocal } from "@/lib/time";
+import CashSessionPanel from "./CashSessionPanel";
 import EntryPanel from "./EntryPanel";
 import { voidEntry } from "./actions";
 
@@ -37,6 +39,12 @@ export default async function CashPage({ searchParams }: { searchParams: Promise
     db.select().from(cashCategories).orderBy(asc(cashCategories.name)),
   ]);
   const sum = summarize(rows.map((r) => r.e));
+  const [openSession] = await db.select().from(cashSessions).where(isNull(cashSessions.closedAt));
+  const [sessionEntries, lastClosed] = await Promise.all([
+    openSession ? db.select().from(cashEntries).where(gte(cashEntries.createdAt, openSession.openedAt)) : Promise.resolve([]),
+    db.select().from(cashSessions).where(isNotNull(cashSessions.closedAt)).orderBy(desc(cashSessions.closedAt)).limit(5),
+  ]);
+  const series = dailySeries(rows.map((r) => r.e), range.from, range.to);
 
   return (
     <>
@@ -85,6 +93,13 @@ export default async function CashPage({ searchParams }: { searchParams: Promise
           </div>
         </div>
       </div>
+
+      {series.length > 1 ? (
+        <div className="card" style={{ marginBottom: 20 }}>
+          <div className="section-title">Fluxo de caixa por dia</div>
+          <CashChart series={series} />
+        </div>
+      ) : null}
 
       <div className="split">
         <div className="stack grow-3">
@@ -153,6 +168,31 @@ export default async function CashPage({ searchParams }: { searchParams: Promise
                 </div>
               ))}
             </div>
+          </div>
+          <div className="card">
+            <div className="section-title">{openSession ? "Fechar caixa" : "Abrir caixa"}</div>
+            <CashSessionPanel
+              isOpen={!!openSession}
+              openedLabel={openSession ? `em ${formatDateShort(localDate(openSession.openedAt))} às ${localTime(openSession.openedAt)}` : ""}
+              openingLabel={openSession ? formatBRL(openSession.openingCents) : ""}
+              expectedLabel={openSession ? formatBRL(expectedCash(openSession.openingCents, sessionEntries)) : ""}
+            />
+            {lastClosed.length > 0 ? (
+              <div className="stack small" style={{ marginTop: 14 }}>
+                <div className="muted tiny">Últimos fechamentos</div>
+                {lastClosed.map((c) => {
+                  const diff = (c.countedCents ?? 0) - (c.expectedCents ?? 0);
+                  return (
+                    <div key={c.id} className="row spread">
+                      <span>{formatDateShort(localDate(c.closedAt!))} {localTime(c.closedAt!)}</span>
+                      <strong style={{ color: diff < 0 ? "var(--danger)" : undefined }}>
+                        {diff === 0 ? "Confere" : `${diff > 0 ? "Sobra" : "Falta"} ${formatBRL(Math.abs(diff))}`}
+                      </strong>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : null}
           </div>
           <div className="card">
             <div className="section-title">Novo lançamento</div>

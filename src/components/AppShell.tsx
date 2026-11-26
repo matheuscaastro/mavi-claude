@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Icon, type IconName } from "./icons";
 
-export type NavItem = { href: string; label: string; icon: IconName };
+export type NavItem = { href: string; label: string; icon: IconName; badge?: number };
 
 const STORAGE_KEY = "mavi.sidebar";
 
@@ -18,6 +18,7 @@ export default function AppShell({
   userName,
   roleLabel,
   initials,
+  photo,
   logout,
   children,
 }: {
@@ -25,6 +26,7 @@ export default function AppShell({
   userName: string;
   roleLabel: string;
   initials: string;
+  photo?: string | null;
   logout: () => Promise<void>;
   children: React.ReactNode;
 }) {
@@ -93,6 +95,11 @@ export default function AppShell({
               <Link key={item.href} href={item.href} className={active ? "active" : undefined} aria-current={active ? "page" : undefined} title={collapsed ? item.label : undefined}>
                 <Icon name={item.icon} />
                 <span className="nav-label">{item.label}</span>
+                {item.badge ? (
+                  <span className="nav-badge" aria-label={`${item.badge} não lidas`} style={{ marginLeft: "auto", background: "var(--green)", color: "#fff", borderRadius: 999, fontSize: 11, lineHeight: "18px", minWidth: 18, textAlign: "center", padding: "0 5px" }}>
+                    {item.badge > 99 ? "99+" : item.badge}
+                  </span>
+                ) : null}
               </Link>
             );
           })}
@@ -104,15 +111,20 @@ export default function AppShell({
             <span className="nav-label">Recolher menu</span>
           </button>
           <div className="user">
-            <span className="avatar" aria-hidden="true" title={userName}>
-              {initials}
-            </span>
-            <div className="user-info small">
+            {photo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img className="avatar" src={photo} alt="" title={userName} style={{ objectFit: "cover" }} />
+            ) : (
+              <span className="avatar" aria-hidden="true" title={userName}>
+                {initials}
+              </span>
+            )}
+            <Link href="/perfil" className="user-info small" title="Meu perfil" style={{ textDecoration: "none", color: "inherit" }}>
               <div style={{ fontWeight: 600 }}>{userName}</div>
               <div className="tiny" style={{ color: "#c9d8d3" }}>
                 {roleLabel}
               </div>
-            </div>
+            </Link>
             <form action={logout} className="logout">
               <button type="submit" className="side-btn" aria-label="Sair" title="Sair">
                 <Icon name="logout" size={18} />

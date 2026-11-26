@@ -44,3 +44,56 @@ export function summarize(entries: EntryLike[]) {
   for (const e of live) if (e.kind === "income") byMethod[e.method] += e.amountCents;
   return { income, expense, balance: income - expense, byMethod };
 }
+
+export type DayPoint = { date: string; income: number; expense: number; balance: number };
+
+/**
+ * Uma linha por dia do intervalo (inclusivo), mesmo sem lançamentos, com o saldo acumulado.
+ * Lançamentos estornados não entram.
+ */
+export function dailySeries(
+  entries: { kind: "income" | "expense"; amountCents: number; occurredOn: string; voidedAt: Date | null }[],
+  from: string,
+  to: string,
+): DayPoint[] {
+  const days: DayPoint[] = [];
+  const index = new Map<string, DayPoint>();
+  for (let d = from; d <= to && days.length < 400; d = addDays(d, 1)) {
+    const p = { date: d, income: 0, expense: 0, balance: 0 };
+    days.push(p);
+    index.set(d, p);
+  }
+  for (const e of entries) {
+    if (e.voidedAt) continue;
+    const p = index.get(e.occurredOn);
+    if (!p) continue;
+    if (e.kind === "income") p.income += e.amountCents;
+    else p.expense += e.amountCents;
+  }
+  let acc = 0;
+  for (const p of days) {
+    acc += p.income - p.expense;
+    p.balance = acc;
+  }
+  return days;
+}
+
+/** Média por atendimento concluído; 0 se não houve nenhum. */
+export function averageTicket(incomeCents: number, completed: number): number {
+  return completed > 0 ? Math.round(incomeCents / completed) : 0;
+}
+
+/** Dinheiro esperado na gaveta: troco inicial + entradas em dinheiro − saídas em dinheiro (estornos não contam). */
+export function expectedCash(openingCents: number, entries: { kind: "income" | "expense"; method: Method; amountCents: number; voidedAt: Date | null }[]): number {
+  let total = openingCents;
+  for (const e of entries) {
+    if (e.voidedAt || e.method !== "cash") continue;
+    total += e.kind === "income" ? e.amountCents : -e.amountCents;
+  }
+  return total;
+}
+
+/** Comissão em centavos: base × percentual, arredondado. */
+export function commissionOf(baseCents: number, percent: number): number {
+  return Math.round((baseCents * percent) / 100);
+}

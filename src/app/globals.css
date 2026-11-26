@@ -2391,3 +2391,25 @@ dialog.modal,
   white-space: nowrap;
   border: 0;
 }
+
+
+/* ---------- Upload de foto: botão no estilo do sistema ---------- */
+.file-btn {
+  position: relative;
+  cursor: pointer;
+}
+.file-btn:focus-within {
+  outline: 3px solid var(--green-light);
+  outline-offset: 2px;
+}
+.file-btn svg {
+  width: 18px;
+  height: 18px;
+}
+.file-name {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--muted, #7A5C55);
+}

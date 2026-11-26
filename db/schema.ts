@@ -10,6 +10,7 @@ import {
   primaryKey,
   serial,
   text,
+  customType,
   timestamp,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
@@ -47,11 +48,27 @@ export const employees = pgTable(
     /** Aparece na agenda e pode ser escolhida pelas clientes. */
     performsServices: boolean("performs_services").notNull().default(true),
     color: text("color").notNull().default("#3D6B62"),
+    /** Comissão sobre os atendimentos concluídos, em % (0 = sem comissão). */
+    commissionPercent: integer("commission_percent").notNull().default(0),
     active: boolean("active").notNull().default(true),
+    /** Quando a foto foi trocada pela última vez; vazio = sem foto (a agenda mostra as iniciais). Serve também para renovar o cache. */
+    photoUpdatedAt: timestamp("photo_updated_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [uniqueIndex("employees_email_key").on(t.email)],
+  (t) => [uniqueIndex("employees_email_key").on(t.email), check("employees_commission_range", sql`${t.commissionPercent} between 0 and 100`)],
 );
+
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({ dataType: () => "bytea" });
+
+/** Foto da funcionária. Fica no banco (o disco do Render é descartado a cada deploy), já reduzida e em WebP, numa tabela própria para as consultas comuns não carregarem os bytes. */
+export const employeePhotos = pgTable("employee_photos", {
+  employeeId: integer("employee_id")
+    .primaryKey()
+    .references(() => employees.id, { onDelete: "cascade" }),
+  data: bytea("data").notNull(),
+  contentType: text("content_type").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
 
 /** Jornada própria de uma funcionária. Sem linhas, vale o horário do salão. */
 export const employeeHours = pgTable(
@@ -242,6 +259,77 @@ export const appointmentEvents = pgTable(
   (t) => [index("appointment_events_appt_idx").on(t.appointmentId)],
 );
 
+/** Avisos para a equipe (novo agendamento online, cancelamento e remarcação feitos pela cliente). */
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: serial("id").primaryKey(),
+    kind: text("kind").notNull(),
+    title: text("title").notNull(),
+    body: text("body").notNull().default(""),
+    /** Para onde o aviso leva (ex.: /agenda/12). */
+    href: text("href").notNull().default(""),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    readAt: timestamp("read_at", { withTimezone: true }),
+  },
+  (t) => [index("notifications_created_idx").on(t.createdAt)],
+);
+
+/** Pessoas esperando uma vaga (balcão ou página pública). Quando um horário cancela e encaixa, a equipe é avisada. */
+export const waitlistEntries = pgTable(
+  "waitlist_entries",
+  {
+    id: serial("id").primaryKey(),
+    name: text("name").notNull(),
+    /** Só dígitos, com DDD. */
+    phone: text("phone").notNull(),
+    serviceIds: integer("service_ids").array().notNull().default(sql`'{}'::integer[]`),
+    /** Nomes dos serviços e duração total no momento do pedido (o histórico não muda se o catálogo mudar). */
+    serviceNames: text("service_names").notNull().default(""),
+    durationMin: integer("duration_min").notNull().default(30),
+    /** Profissional preferida; vazio = qualquer uma. */
+    employeeId: integer("employee_id").references(() => employees.id, { onDelete: "set null" }),
+    wantedFrom: date("wanted_from").notNull(),
+    wantedTo: date("wanted_to").notNull(),
+    /** any = o dia todo, morning = antes das 12h, afternoon = a partir das 12h. */
+    period: text("period").notNull().default("any"),
+    note: text("note").notNull().default(""),
+    /** waiting = esperando, contacted = já avisada, booked = agendou, removed = saiu da lista. */
+    status: text("status").notNull().default("waiting"),
+    origin: appointmentOrigin("origin").notNull().default("counter"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    contactedAt: timestamp("contacted_at", { withTimezone: true }),
+  },
+  (t) => [
+    check("waitlist_period_valid", sql`${t.period} in ('any', 'morning', 'afternoon')`),
+    check("waitlist_status_valid", sql`${t.status} in ('waiting', 'contacted', 'booked', 'removed')`),
+    check("waitlist_range_valid", sql`${t.wantedFrom} <= ${t.wantedTo}`),
+    index("waitlist_status_idx").on(t.status, t.wantedFrom),
+  ],
+);
+
+/** Abertura e fechamento do caixa: troco inicial, dinheiro contado no fim e a diferença. Só uma sessão pode ficar aberta. */
+export const cashSessions = pgTable(
+  "cash_sessions",
+  {
+    id: serial("id").primaryKey(),
+    openedAt: timestamp("opened_at", { withTimezone: true }).notNull().defaultNow(),
+    openedBy: integer("opened_by").references(() => employees.id),
+    openingCents: integer("opening_cents").notNull().default(0),
+    closedAt: timestamp("closed_at", { withTimezone: true }),
+    closedBy: integer("closed_by").references(() => employees.id),
+    /** Dinheiro que deveria estar na gaveta ao fechar (troco + entradas em dinheiro − saídas em dinheiro). */
+    expectedCents: integer("expected_cents"),
+    /** Dinheiro contado na gaveta ao fechar. */
+    countedCents: integer("counted_cents"),
+    note: text("note").notNull().default(""),
+  },
+  (t) => [
+    check("cash_sessions_opening_nonneg", sql`${t.openingCents} >= 0`),
+    uniqueIndex("cash_sessions_one_open").on(sql`(true)`).where(sql`${t.closedAt} is null`),
+  ],
+);
+
 /** Categorias dos lançamentos avulsos do caixa, separadas por tipo. O lançamento guarda o nome (texto), então excluir uma categoria não mexe no histórico. */
 export const cashCategories = pgTable(
   "cash_categories",
@@ -316,7 +404,35 @@ export const messages = pgTable(
 );
 
 export type Message = typeof messages.$inferSelect;
+export const photoKind = pgEnum("client_photo_kind", ["before", "after"]);
+
+/**
+ * Fotos de antes e depois da cliente. Ficam no banco (o disco do Render é descartado a cada deploy), já reduzidas
+ * (até 1280 px, WebP), numa tabela própria para as consultas comuns da ficha não carregarem os bytes.
+ */
+export const clientPhotos = pgTable(
+  "client_photos",
+  {
+    id: serial("id").primaryKey(),
+    clientId: integer("client_id")
+      .notNull()
+      .references(() => clients.id, { onDelete: "cascade" }),
+    kind: photoKind("kind").notNull(),
+    /** Dia em que a foto foi tirada (AAAA-MM-DD). */
+    takenOn: date("taken_on").notNull(),
+    /** Área ou tratamento (ex.: "axilas, sessão 3"). */
+    note: text("note").notNull().default(""),
+    data: bytea("data").notNull(),
+    contentType: text("content_type").notNull(),
+    createdBy: integer("created_by").references(() => employees.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("client_photos_client_idx").on(t.clientId, t.takenOn)],
+);
+
+
 export type CashEntry = typeof cashEntries.$inferSelect;
+export type CashSession = typeof cashSessions.$inferSelect;
 export type Employee = typeof employees.$inferSelect;
 export type ServiceCategory = typeof serviceCategories.$inferSelect;
 export type Service = typeof services.$inferSelect;
